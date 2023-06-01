@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'stein_saks_papir'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=stein_saks_papir",
+                    "--package=stein_saks_papir"
+                ],
+                "filter": {
+                    "name": "stein_saks_papir",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'stein_saks_papir'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=stein_saks_papir",
+                    "--package=stein_saks_papir"
+                ],
+                "filter": {
+                    "name": "stein_saks_papir",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
