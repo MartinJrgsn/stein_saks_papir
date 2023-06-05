@@ -41,12 +41,13 @@ fn test_win_conditions() -> (){
 }
 
 #[test]
-fn test_tcp_ping_client()
+fn test_tcp_ping_server()
 {
     use std::net::{TcpListener, TcpStream};
-    use pnet::datalink;
 
-    let listener = TcpListener::bind("192.168.43.20").expect("Unable to connect!");
+    const TARGET: &str = "192.168.43.20";
+
+    let listener = TcpListener::bind(TARGET).expect("Unable to bind!");
     for stream in listener.incoming()
     {
         let mut stream = stream.expect("Invalid stream!");
@@ -57,5 +58,28 @@ fn test_tcp_ping_client()
             .expect("Unable to write");
         
         println!("Connection established!");
+    }
+}
+
+#[test]
+fn test_tcp_ping_client()
+{
+    use std::net::{TcpListener, TcpStream};
+
+    const TARGET: &str = "192.168.43.147";
+
+    let mut stream = TcpStream::connect(TARGET)
+        .expect("Unable to connect!");
+    stream.write(b"Ping!").expect("Unable to write ping");
+
+    let listener = TcpListener::bind(TARGET).expect("Unable to bind!");
+    for stream in listener.incoming()
+    {
+        let mut stream = stream.expect("Invalid stream!");
+
+        let mut request_message = vec![];
+        stream.read(&mut request_message).expect("Unable to read");
+        
+        println!("Connection established! Received: {}", String::from_utf8(request_message).expect("Invalid string"));
     }
 }
