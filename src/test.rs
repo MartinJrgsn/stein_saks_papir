@@ -46,12 +46,17 @@ pub mod test_tcp
     //const TARGET: &str = "192.168.43.147";
     //const TARGET: &str = "192.168.43.20";
     
-
-
     #[test]
     fn test_tcp_ping_server()
     {
-        let listener = TcpListener::bind(TARGET.to_string() + ":" + PORT).expect("Unable to bind!");
+        let listener = loop
+        {
+            match TcpListener::bind(TARGET.to_string() + ":" + PORT)
+            {
+                Ok(listener) => break listener,
+                Err(err) => ()
+            }
+        };
         for stream in listener.incoming()
         {
             let mut stream = stream.expect("Invalid stream!");
