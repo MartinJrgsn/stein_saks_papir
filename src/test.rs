@@ -41,9 +41,12 @@ fn test_win_conditions() -> (){
 pub mod test_tcp
 {
     use std::{net::{TcpListener, TcpStream}, io::{Write, Read}};
-    const PORT: &str = "666";
-    const TARGET: &str = "192.168.2.2";
-    //const TARGET: &str = "192.168.43.147";
+    const PORT: &str = "6666";
+    //const TARGET: &str = "192.168.2.2";
+    const MARTIN: &str = "192.168.43.20";
+    const SIGURD: &str = "192.168.43.147";
+    const DESTINATION: &str = MARTIN;
+    const SOURCE: &str = SIGURD;
     //const TARGET: &str = "192.168.43.20";
     
     #[test]
@@ -51,7 +54,7 @@ pub mod test_tcp
     {
         let listener = loop
         {
-            match TcpListener::bind(TARGET.to_string() + ":" + PORT)
+            match TcpListener::bind(DESTINATION.to_string() + ":" + PORT)
             {
                 Ok(listener) => break listener,
                 Err(err) => ()
@@ -73,11 +76,11 @@ pub mod test_tcp
     #[test]
     fn test_tcp_ping_client()
     {    
-        let mut stream = TcpStream::connect(TARGET.to_string() + ":" + PORT)
+        let mut stream = TcpStream::connect(DESTINATION.to_string() + ":" + PORT)
             .expect("Unable to connect!");
         stream.write(b"Ping!").expect("Unable to write ping");
     
-        let listener = TcpListener::bind(TARGET.to_string() + ":" + PORT).expect("Unable to bind!");
+        let listener = TcpListener::bind(SOURCE.to_string() + ":" + PORT).expect("Unable to bind!");
         for stream in listener.incoming()
         {
             let mut stream = stream.expect("Invalid stream!");
