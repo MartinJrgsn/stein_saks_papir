@@ -1,3 +1,5 @@
+use std::io::{Write, Read};
+
 use crate::game::*;
 
 #[test]
@@ -44,10 +46,16 @@ fn test_tcp_ping_client()
     use std::net::{TcpListener, TcpStream};
     use pnet::datalink;
 
-    let listener = TcpListener::bind("192.168.126.1").expect("Unable to connect!");
+    let listener = TcpListener::bind("192.168.43.20").expect("Unable to connect!");
     for stream in listener.incoming()
     {
-        let stream = stream.expect("Invalid stream!");
+        let mut stream = stream.expect("Invalid stream!");
+
+        let mut request_message = vec![];
+        stream.read(&mut request_message).expect("Unable to read");
+        stream.write_all(&[b"Ping test! all good! Received: {}".to_vec(), request_message].concat())
+            .expect("Unable to write");
+        
         println!("Connection established!");
     }
 }
