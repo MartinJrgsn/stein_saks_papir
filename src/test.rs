@@ -1,7 +1,5 @@
 use crate::game::*;
 
-
-
 #[test]
 fn test_win_conditions() -> (){
     static TRUTH_TABLE : [[Option<bool>; Choice::LENGTH]; Choice::LENGTH] = [
@@ -17,7 +15,7 @@ fn test_win_conditions() -> (){
             match (Choice::try_from(i as u8), Choice::try_from(j as u8)) {
                 (Ok(me), Ok(you)) => {
                     let game_outcome = me.get_outcome(you);
-                    println!("i: {0}, j: {1}, val: {2}, outcome: ,{3} ",
+                    println!("i: {0}, j: {1}, val: {2}, outcome: {3} ",
                         i,
                         j,
                         condition_string,
@@ -34,7 +32,7 @@ fn test_win_conditions() -> (){
 
 fn conditions_to_string(wld : Option<bool>) -> &'static str {
     match wld {
-        Some(true)  =>  "Win!:-)",
+        Some(true)  =>  "Win :-)",
         None        =>  "Draw :-|",
         Some(false) =>  "Loss :-(",
     }
