@@ -1,5 +1,3 @@
-use std::io::{Write, Read};
-
 use crate::game::*;
 
 #[test]
@@ -40,46 +38,49 @@ fn test_win_conditions() -> (){
     }
 }
 
-#[test]
-fn test_tcp_ping_server()
+pub mod test_tcp
 {
-    use std::net::{TcpListener, TcpStream};
+    use std::{net::{TcpListener, TcpStream}, io::{Write, Read}};
+    const PORT: &str = "666";
+    const TARGET: &str = "192.168.2.2";
+    //const TARGET: &str = "192.168.43.147";
+    //const TARGET: &str = "192.168.43.20";
+    
 
-    const TARGET: &str = "192.168.43.20";
 
-    let listener = TcpListener::bind(TARGET).expect("Unable to bind!");
-    for stream in listener.incoming()
+    #[test]
+    fn test_tcp_ping_server()
     {
-        let mut stream = stream.expect("Invalid stream!");
-
-        let mut request_message = vec![];
-        stream.read(&mut request_message).expect("Unable to read");
-        stream.write_all(&[b"Ping test! all good! Received: {}".to_vec(), request_message].concat())
-            .expect("Unable to write");
-        
-        println!("Connection established!");
+        let listener = TcpListener::bind(TARGET.to_string() + ":" + PORT).expect("Unable to bind!");
+        for stream in listener.incoming()
+        {
+            let mut stream = stream.expect("Invalid stream!");
+    
+            let mut request_message = vec![];
+            stream.read(&mut request_message).expect("Unable to read");
+            stream.write_all(&[b"Ping test! all good! Received: {}".to_vec(), request_message].concat())
+                .expect("Unable to write");
+            
+            println!("Connection established!");
+        }
     }
-}
-
-#[test]
-fn test_tcp_ping_client()
-{
-    use std::net::{TcpListener, TcpStream};
-
-    const TARGET: &str = "192.168.43.147";
-
-    let mut stream = TcpStream::connect(TARGET)
-        .expect("Unable to connect!");
-    stream.write(b"Ping!").expect("Unable to write ping");
-
-    let listener = TcpListener::bind(TARGET).expect("Unable to bind!");
-    for stream in listener.incoming()
-    {
-        let mut stream = stream.expect("Invalid stream!");
-
-        let mut request_message = vec![];
-        stream.read(&mut request_message).expect("Unable to read");
-        
-        println!("Connection established! Received: {}", String::from_utf8(request_message).expect("Invalid string"));
+    
+    #[test]
+    fn test_tcp_ping_client()
+    {    
+        let mut stream = TcpStream::connect(TARGET.to_string() + ":" + PORT)
+            .expect("Unable to connect!");
+        stream.write(b"Ping!").expect("Unable to write ping");
+    
+        let listener = TcpListener::bind(TARGET.to_string() + ":" + PORT).expect("Unable to bind!");
+        for stream in listener.incoming()
+        {
+            let mut stream = stream.expect("Invalid stream!");
+    
+            let mut request_message = vec![];
+            stream.read(&mut request_message).expect("Unable to read");
+            
+            println!("Connection established! Received: {}", String::from_utf8(request_message).expect("Invalid string"));
+        }
     }
 }
