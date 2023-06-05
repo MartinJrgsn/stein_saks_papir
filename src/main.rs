@@ -16,4 +16,4 @@ fn main() {
     let mut rps_game : Game = Game::new(players);
 
     rps_game.game_loop();
-    }
+}
