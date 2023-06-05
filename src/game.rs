@@ -38,7 +38,6 @@ impl Game {
     pub fn game_loop(&mut self) -> GameEndState
     {
         let player_names: [String; 2] = self.get_player_names();
-        let mut input = String::new();
         loop {
             match self.choice {
                 [Some(player1), Some(player2)] => {
