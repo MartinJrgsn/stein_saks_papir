@@ -42,19 +42,17 @@ pub mod test_tcp
 {
     use std::{net::{TcpListener, TcpStream}, io::{Write, Read}};
     const PORT: &str = "6666";
-    //const TARGET: &str = "192.168.2.2";
     const MARTIN: &str = "192.168.43.20";
-    const SIGURD: &str = "192.168.43.147";
-    const DESTINATION: &str = MARTIN;
-    const SOURCE: &str = SIGURD;
-    //const TARGET: &str = "192.168.43.20";
+    const SIGURD: &str = "172.16.216.132";
+    const DESTINATION: &str = SIGURD;
+    const SOURCE: &str = MARTIN;
     
     #[test]
     fn test_tcp_ping_server()
     {
         let listener = loop
         {
-            match TcpListener::bind(DESTINATION.to_string() + ":" + PORT)
+            match TcpListener::bind(SOURCE.to_string() + ":" + PORT)
             {
                 Ok(listener) => break listener,
                 Err(err) => ()
