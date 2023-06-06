@@ -1,6 +1,12 @@
-use crate::player::*;
 pub mod choice;
-pub use crate::choice::*;
+pub mod actor;
+pub mod transport;
+
+pub use choice::*;
+pub use actor::*;
+pub use transport::*;
+
+use crate::player::*;
 
 pub struct Game {
     choice : [Option<Choice>; 2],
