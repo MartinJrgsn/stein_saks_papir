@@ -116,7 +116,7 @@ pub mod test_tcp
     
             let mut request_message = vec![];
             stream.read(&mut request_message).expect("Unable to read");
-            stream.write_all(&[b"Ping test all good! Received: ".to_vec(), request_message].concat())
+            stream.write_all(&[b"Ping test all good! Received: ".to_vec(), request_message, b"\n".to_vec()].concat())
                 .expect("Unable to write");
             
             println!("Connection established!");
