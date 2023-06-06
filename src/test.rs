@@ -40,31 +40,24 @@ fn test_win_conditions() -> (){
 
 pub mod test_tcp
 {
-    use std::{net::{TcpListener, TcpStream}, io::{Write, Read}};
+    use std::{net::{TcpListener, TcpStream}, io::{Write, Read, BufReader, BufRead}};
     const PORT: &str = "6666";
     const MARTIN: &str = "192.168.43.20";
     const SIGURD: &str = "172.16.216.132";
-    const DESTINATION: &str = SIGURD;
-    const SOURCE: &str = MARTIN;
+    const CLIENT: &str = SIGURD;
+    const SERVER: &str = MARTIN;
     
     #[test]
     fn test_tcp_ping_server()
     {
-        let listener = loop
-        {
-            match TcpListener::bind(SOURCE.to_string() + ":" + PORT)
-            {
-                Ok(listener) => break listener,
-                Err(err) => ()
-            }
-        };
+        let listener = TcpListener::bind(SERVER.to_string() + ":" + PORT).expect("Unable to bind");
         for stream in listener.incoming()
         {
             let mut stream = stream.expect("Invalid stream!");
     
             let mut request_message = vec![];
             stream.read(&mut request_message).expect("Unable to read");
-            stream.write_all(&[b"Ping test! all good! Received: {}".to_vec(), request_message].concat())
+            stream.write_all(&[b"Ping test all good! Received: {}".to_vec(), request_message].concat())
                 .expect("Unable to write");
             
             println!("Connection established!");
@@ -73,20 +66,21 @@ pub mod test_tcp
     
     #[test]
     fn test_tcp_ping_client()
-    {    
-        let mut stream = TcpStream::connect(SOURCE.to_string() + ":" + PORT) // Connect to source
+    {
+        let mut stream = TcpStream::connect(SERVER.to_string() + ":" + PORT) // Connect to source
             .expect("Unable to connect!");
         stream.write(b"Ping!").expect("Unable to write ping");
-    
-        let listener = TcpListener::bind(DESTINATION.to_string() + ":" + PORT).expect("Unable to bind!");
-        for stream in listener.incoming()
+        loop
         {
-            let mut stream = stream.expect("Invalid stream!");
-    
-            let mut request_message = vec![];
-            stream.read(&mut request_message).expect("Unable to read");
-            
-            println!("Connection established! Received: {}", String::from_utf8(request_message).expect("Invalid string"));
+            let mut buffer = vec![];
+            let mut reader = BufReader::new(&stream);
+            reader.read_until(b'\n', &mut buffer).expect("Unable to read");
+
+            if buffer.len() > 0
+            {
+                println!("Connection established! Received: {}", String::from_utf8(buffer).expect("Invalid string"));
+                break
+            }
         }
     }
 }
