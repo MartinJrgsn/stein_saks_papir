@@ -1,8 +1,3 @@
-// use std::mem;
-// use std::{io};
-
-use std::{io, fmt::format};
-
 use crate::player::*;
 pub mod choice;
 pub use crate::choice::*;

@@ -1,5 +1,5 @@
 use crate::{game::*, player::PlayerDecisionError};
-use std::{io, fmt::Display};
+use std::{io};
 
 use super::Player;
 
@@ -50,10 +50,11 @@ impl Human
         Human::MEMORY_LENGTH
     }
 
-    pub fn append_memory(&mut self, choice : Choice) -> () {
-        &self.memory.rotate_right(1);
-        self.memory[0] = Some(choice);
-    }
+    // Not using append_memory anymore
+    // pub fn append_memory(&mut self, choice : Choice) -> () {
+    //     &self.memory.rotate_right(1);
+    //     self.memory[0] = Some(choice);
+    // }
 }
 
 impl Player for Human {

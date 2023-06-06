@@ -1,7 +1,7 @@
 pub mod human;
-
 pub use human::*;
 use crate::game::Choice;
+
 pub trait Player
 {
     fn is_human(self: &Self) -> bool
