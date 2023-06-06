@@ -44,7 +44,6 @@ pub mod test_tcp
     const PORT: &str = "6666";
     const MARTIN: &str = "192.168.43.20";
     const SIGURD: &str = "172.16.216.132";
-    const CLIENT: &str = SIGURD;
     const SERVER: &str = MARTIN;
     
     #[test]
