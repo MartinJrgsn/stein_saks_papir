@@ -74,11 +74,11 @@ pub mod test_tcp
     #[test]
     fn test_tcp_ping_client()
     {    
-        let mut stream = TcpStream::connect(DESTINATION.to_string() + ":" + PORT)
+        let mut stream = TcpStream::connect(SOURCE.to_string() + ":" + PORT) // Connect to source
             .expect("Unable to connect!");
         stream.write(b"Ping!").expect("Unable to write ping");
     
-        let listener = TcpListener::bind(SOURCE.to_string() + ":" + PORT).expect("Unable to bind!");
+        let listener = TcpListener::bind(DESTINATION.to_string() + ":" + PORT).expect("Unable to bind!");
         for stream in listener.incoming()
         {
             let mut stream = stream.expect("Invalid stream!");
