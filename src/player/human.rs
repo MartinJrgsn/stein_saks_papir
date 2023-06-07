@@ -6,66 +6,44 @@ use super::Player;
 #[derive(Clone)] 
 pub struct Human 
 {
-    name : String,
-    memory : [Option<Choice>; Self::MEMORY_LENGTH],
+    uid: Port,
+    name: String
 }
 
 impl Human 
 {
     pub const MEMORY_LENGTH : usize = 5;
 
-    pub fn new_player_with_name(name: String) -> Self
-    {        
-        Self
-        { 
-            name, 
-            memory : [Option::None; Human::MEMORY_LENGTH],
-        }
-    }
-
-    fn prompt_for_name() -> String
+    pub fn new(session: &mut dyn Session, ui: &mut dyn UI) -> Result<Self, SessionJoinError>
     {
-        let mut input = String::new();
-        println!("Enter player name:");
-        io::stdin().read_line(&mut input).expect("Failed to read input");
-        input.trim().to_string()
-    }
-
-    pub fn new_player(name : Option<String>) -> Self {
-        Self::new_player_with_name(match name {
-            None => Self::prompt_for_name(),
-            Some(name) => name
+        let (uid, name) = session.try_join(ui)?;
+        Ok(Self
+        {
+            uid,
+            name
         })
     }
-    
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
 
-    pub fn get_memory(&self) -> &[Option<Choice>; Self::MEMORY_LENGTH] {
-        &self.memory
+    pub fn get_uid(&self) -> Port
+    {
+        self.uid
     }
-
-    pub const fn get_memory_length(&self) -> usize {
-        Human::MEMORY_LENGTH
-    }
-
-    // Not using append_memory anymore
-    // pub fn append_memory(&mut self, choice : Choice) -> () {
-    //     &self.memory.rotate_right(1);
-    //     self.memory[0] = Some(choice);
-    // }
 }
 
 impl Player for Human {
-    fn is_human(self: &Self) -> bool
+    fn as_human(self: &Self) -> Option<&Human>
     {
-        true
+        Some(self)
+    }
+    fn as_human_mut(self: &mut Self) -> Option<&mut Human>
+    {
+        Some(self)
     }
 
-    fn make_decision(self: &mut Self, player_names: [String; 2], choice_log: &[[Choice; 2]]) -> Result<Option<Choice>, PlayerDecisionError>
+    fn make_decision(self: &mut Self, player_names: [String; 2], choice_log: &[[Choice; 2]], session: &mut dyn Session) -> Result<Option<Choice>, PlayerDecisionError>
     {
-        for mem in choice_log {
+        session.player_make_decision(self.uid)
+        /*for mem in choice_log {
             println!(
                 "Previous choices: \n{0}: {1}, {2}: {3}",
                 player_names[0],
@@ -76,7 +54,7 @@ impl Player for Human {
         }
 
         let mut input = String::new();
-        println!("{0} choose: Rock/Paper/Scissor:", self.get_name());
+        println!("{0} choose: Rock/Paper/Scissor:", self.get_name(actor));
         io::stdin().read_line(&mut input).expect("Failed to read input");
         let cin = input.trim();
         match cin 
@@ -86,10 +64,10 @@ impl Player for Human {
             "s" | "3" => Ok(Some(Choice::Scissor)),
             "q" => Err(PlayerDecisionError::Quit),
             _ => Ok(None),
-        }            
+        }*/
     }
 
-    fn get_name(self: &Self) -> &str {
+    fn get_name(&self) -> &str {
         &self.name
     }
 }

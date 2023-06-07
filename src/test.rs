@@ -2,32 +2,22 @@ use crate::game::*;
 
 #[test]
 fn test_win_conditions() -> (){
-    fn conditions_to_string(wld : Option<bool>) -> &'static str {
-        match wld {
-            Some(true)  =>  "Win :-)",
-            None        =>  "Draw :-|",
-            Some(false) =>  "Loss :-(",
-        }
-    }
-
-    static TRUTH_TABLE : [[Option<bool>; Choice::LENGTH]; Choice::LENGTH] = [
-        [None,          Some(true),     Some(false)],
-        [Some(false),   None,           Some(true)],
-        [Some(true),    Some(false),    None],
+    static TRUTH_TABLE : [[Outcome; Choice::LENGTH]; Choice::LENGTH] = [
+        [Outcome::Draw, Outcome::Win,  Outcome::Loss],
+        [Outcome::Loss, Outcome::Draw, Outcome::Win],
+        [Outcome::Win,  Outcome::Loss, Outcome::Draw],
     ];
     
     for i in 0..TRUTH_TABLE.len() {
         for j in 0..TRUTH_TABLE.len() {
-            let condition_string = conditions_to_string(TRUTH_TABLE[i][j]);
-
             match (Choice::try_from(i as u8), Choice::try_from(j as u8)) {
                 (Ok(me), Ok(you)) => {
                     let game_outcome = me.get_outcome(you);
                     println!("i: {0}, j: {1}, val: {2}, outcome: {3} ",
                         i,
                         j,
-                        condition_string,
-                        conditions_to_string(game_outcome),
+                        TRUTH_TABLE[i][j],
+                        game_outcome,
                     );
                     
                     assert_eq!(game_outcome, TRUTH_TABLE[i][j]);
@@ -45,7 +35,7 @@ pub mod test_tcp
     const MARTIN: &str = "192.168.43.20";
     const SIGURD: &str = "172.16.216.132";
     const SERVER: &str = MARTIN;
-    const SERVER_IP: &str = "192.168.43.20:7878";
+    const SERVER_IP: &str = "172.29.75.61:7878";
     
     #[test]
     fn test_tcp_message_from_user_server()
@@ -141,5 +131,13 @@ pub mod test_tcp
                 break
             }
         }
+    }
+
+    #[test]
+    fn test_get_my_ip()
+    {
+        use local_ip_address::local_ip;
+
+        println!("{}", local_ip().unwrap())
     }
 }

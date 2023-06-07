@@ -1,39 +1,40 @@
 pub mod choice;
 pub mod actor;
-pub mod transport;
+pub mod session;
+pub mod outcome;
+pub mod ui;
 
 pub use choice::*;
 pub use actor::*;
-pub use transport::*;
+pub use session::*;
+pub use outcome::*;
+pub use ui::*;
 
-use crate::player::*;
+use super::*;
 
 pub struct Game {
     choice : [Option<Choice>; 2],
     choice_log : Vec<[Choice; 2]>,
-    players : [Box<dyn Player>; 2]
+    players : [Box<dyn Player>; 2],
+    session: Box<dyn Session>
 }
 
 impl Game {
-    pub fn new(players : [Box <dyn Player>; 2]) -> Self {
+    pub fn new(players : [Box <dyn Player>; 2], session: Box<dyn Session>) -> Self {
         Self {
             choice : [None; 2],
             choice_log : vec![],
             players,
-        }
-    }
-
-    fn outcome_to_string(&self, wld : Option<bool>) -> String {
-        match wld {
-            Some(true)  =>  format!("{0} wins!", self.players[0].get_name()),
-            None        =>  format!("Draw :-|"),
-            Some(false) =>  format!("{0} looses!", self.players[0].get_name()),
+            session
         }
     }
 
     fn get_player_names(&self) -> [String; 2]
     {
-        [self.players[0].get_name().to_string(), self.players[1].get_name().to_string()]
+        [
+            self.players[0].get_name().to_string(),
+            self.players[1].get_name().to_string()
+        ]
     }
 
     pub fn game_loop(&mut self) -> GameEndState
@@ -42,7 +43,8 @@ impl Game {
         loop {
             match self.choice {
                 [Some(player1), Some(player2)] => {
-                    println!("{}", self.outcome_to_string(player1.get_outcome(player2)));
+                    let outcome = player1.get_outcome(player2);
+                    println!("{}", if self.session.is_user(&*self.players[0]) {outcome} else {!outcome});
                     self.choice_log.push([player1, player2]);
                     self.choice = [None; 2];
                 },
@@ -54,7 +56,8 @@ impl Game {
                         {
                             match player.make_decision(
                                 player_names.clone(),
-                                &self.choice_log
+                                &self.choice_log,
+                                &mut *self.session
                             )
                             {
                                 Ok(player_choice) => *choice = player_choice,

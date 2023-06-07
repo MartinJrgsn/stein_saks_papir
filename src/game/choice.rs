@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use super::outcome::Outcome;
+
 #[derive(Clone, Copy, Debug)] // clone explicit , copy implisit
 #[repr(u8)]
 pub enum Choice {
@@ -17,15 +19,15 @@ impl Choice {
         return (self as u8 + 1) % (Self::LENGTH as u8) == oponents_choice as u8//;
     }
 
-    pub fn get_outcome(self, oponents_choice : Choice) -> Option<bool> {
+    pub fn get_outcome(self, oponents_choice : Choice) -> Outcome {
         if self.is_win(oponents_choice) {
-            Some(true)
+            Outcome::Win
         }
         else if self.is_tie(oponents_choice) {
-            None
+            Outcome::Draw
         }
         else {
-            Some(false)
+            Outcome::Loss
         }
     }
     
