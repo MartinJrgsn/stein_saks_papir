@@ -2,16 +2,18 @@
 
 pub mod game; 
 pub mod player;
+pub mod error;
 
 use game::*;
 use player::*;
+use error::*;
 
 #[cfg(test)]
 mod test;
 
-fn main() -> Result<(), SessionJoinError>
+fn main() -> Result<(), ApplicationError>
 {
-    let mut session = SessionTcp::new(None, 6666).unwrap();
+    let mut session = SessionTcpUdp::new(None, 6666)?;
     let mut ui = TUI;
     let me : Human = Human::new(&mut session, &mut ui)?;
     let you : Human = Human::new(&mut session, &mut ui)?;

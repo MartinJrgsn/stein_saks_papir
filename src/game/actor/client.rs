@@ -1,54 +1,91 @@
 pub mod message;
+pub mod friend;
 
 pub use message::*;
+pub use friend::*;
 
-use std::{sync::{RwLock, Arc}, time::SystemTime};
+use std::{sync::{RwLock, Arc}, time::SystemTime, net::TcpStream, io::{Write, Read}};
 
-use crate::game::SessionJoinError;
+use crate::game::{JoinError, RequestError, SendError, SerializeTcp, TryDeserializeTcp, DeserializeTcpError};
 
 use super::*;
 
 pub struct ActorClient
 {
-    send_queue: Arc<RwLock<Vec<ClientMessage>>>,
-    awaiting_join: Arc<RwLock<bool>>,
-    join_response: Arc<RwLock<Option<Result<Port, SessionJoinError>>>>
+    friend: ActorClientFriend
 }
 
 impl ActorClient
 {
-    const JOIN_TIMOUT_MILLIS: u128 = 1000;
+    const JOIN_TIMEOUT_MILLIS: u128 = 1000;
 
     pub fn new() -> Self
     {
         Self
         {
-            send_queue: Arc::new(RwLock::new(vec![])),
-            awaiting_join: Arc::new(RwLock::new(false)),
-            join_response: Arc::new(RwLock::new(None))
+            friend: ActorClientFriend
+            {
+                send: Arc::new(RwLock::new(None)),
+                response: Arc::new(RwLock::new(None)),
+                awaiting_response: Arc::new(RwLock::new(false))
+            }
+        }
+    }
+    pub fn new_friend(&self) -> ActorClientFriend
+    {
+        ActorClientFriend
+        {
+            send: self.friend.send.clone(),
+            response: self.friend.response.clone(),
+            awaiting_response: self.friend.awaiting_response.clone()
+        }
+    }
+
+    fn send(&self, message: ClientMessage) -> Result<(), SendError>
+    {
+        let begin_time = SystemTime::now();
+        while self.friend.send.read()?.is_some()
+        {
+            if begin_time.elapsed()?.as_millis() >= ActorClient::JOIN_TIMEOUT_MILLIS
+            {
+                return Err(SendError::Deadlock)
+            }
+        }
+        *self.friend.send.write()? = Some(message);
+        Ok(())
+    }
+    fn request(&self, message: ClientMessage) -> Result<ServerMessage, RequestError>
+    {
+        self.send(message)?;
+        
+        *self.friend.awaiting_response.write()? = true;
+
+        let begin_time = SystemTime::now();
+        loop
+        {
+            if let Some(response) = self.friend.response.write()?.take()
+            {
+                return Ok(response?)
+            }
+            if begin_time.elapsed()?.as_millis() >= ActorClient::JOIN_TIMEOUT_MILLIS
+            {
+                return Err(RequestError::Timeout)
+            }
         }
     }
 }
 
 impl Actor for ActorClient
 {
-    fn try_join(self: &mut Self, name: &str) -> Result<Port, SessionJoinError>
+    fn try_join(self: &mut Self, name: &str) -> Result<Port, RequestJoinError>
     {
-        *self.awaiting_join.write()? = true;
-        *self.join_response.write()? = None;
-        self.send_queue.write()?.push(ClientMessage::Name(name.to_string()));
-
-        let begin_time = SystemTime::now();
-        loop
+        match self.request(ClientMessage::Name(name.to_string()))?
         {
-            if let Some(join_response) = self.join_response.write()?.take()
+            ServerMessage::Response(response) => match response
             {
-                return join_response
-            }
-            if begin_time.elapsed()?.as_millis() >= ActorClient::JOIN_TIMOUT_MILLIS
-            {
-                return Err(SessionJoinError::Timeout)
-            }
+                ServerResponse::OnJoin(event) => event.into()
+            },
+            ServerMessage::Error(error) => Err(error.into())
         }
     }
 

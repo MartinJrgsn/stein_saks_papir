@@ -14,7 +14,7 @@ impl Human
 {
     pub const MEMORY_LENGTH : usize = 5;
 
-    pub fn new(session: &mut dyn Session, ui: &mut dyn UI) -> Result<Self, SessionJoinError>
+    pub fn new(session: &mut dyn Session, ui: &mut dyn UI) -> Result<Self, RequestJoinError>
     {
         let (uid, name) = session.try_join(ui)?;
         Ok(Self

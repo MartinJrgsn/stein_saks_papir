@@ -1,7 +1,9 @@
+#[derive(Debug)]
 pub enum DeserializeTcpError
 {
     InsufficientBufferLength(usize),
     NameParseError(std::string::FromUtf8Error),
+    ChoiceParseError,
     UnrecognizedHeader(u8),
     DataParseError
 }

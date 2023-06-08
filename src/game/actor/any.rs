@@ -23,7 +23,7 @@ impl ActorAny
 
 impl Actor for ActorAny
 {
-    fn try_join(self: &mut Self, name: &str) -> Result<Port, SessionJoinError>
+    fn try_join(self: &mut Self, name: &str) -> Result<Port, RequestJoinError>
     {
         match self
         {

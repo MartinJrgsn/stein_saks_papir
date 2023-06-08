@@ -1,20 +1,21 @@
 pub mod message;
 pub mod error;
+pub mod friend;
 
 pub use message::*;
 pub use error::*;
+pub use friend::*;
 
-use std::{net::TcpListener, io::{Read, Write}, sync::{RwLock, Arc}};
+use std::{net::{TcpListener, TcpStream}, io::{Read, Write}, sync::{RwLock, Arc}};
 
-use crate::game::{SessionJoinError, TryDeserializeTcp, SerializeTcp};
+use crate::game::{JoinError, TryDeserializeTcp, SerializeTcp, RequestError};
 
 use super::*;
 
 pub struct ActorServer
 {
     port: Port,
-    uids: Arc<RwLock<Vec<Port>>>,
-    send_queue: Arc<RwLock<Vec<ServerMessage>>>,
+    friend: ActorServerFriend
 }
 
 impl ActorServer
@@ -24,75 +25,28 @@ impl ActorServer
         Self
         {
             port,
-            uids: Arc::new(RwLock::new(vec![])),
-            send_queue: Arc::new(RwLock::new(vec![]))
-        }
-    }
-    pub fn atomic_copy(&self) -> Self
-    {
-        Self
-        {
-            port: self.port,
-            uids: self.uids.clone(),
-            send_queue: self.send_queue.clone()
-        }
-    }
-    pub fn listen(&self, listener: TcpListener)
-    {
-        for stream in listener.incoming()
-        {
-            let mut stream = stream.expect("Invalid stream!");
-            let from_port = stream.local_addr().expect("Unable to fetch address").port();
-    
-            let mut message = vec![];
-            stream.read(&mut message).expect("Unable to read");
-
-            match ClientMessage::try_from_tcp_message(&message)
+            friend: ActorServerFriend
             {
-                Ok(message) => match self.handle_message(message, from_port)
-                {
-                    Ok(Some(response)) => {
-                        stream.write_all(&response.into_tcp_message()).expect("Unable to write");
-                    },
-                    Err(error) => {
-                        
-                    },
-                    _ => ()
-                },
-                Err(error) => {
-                    todo!()
-                }
-            };
+                uids: Arc::new(RwLock::new(vec![])),
+                send_queue: Arc::new(RwLock::new(vec![]))
+            }
         }
     }
-    fn handle_message(&self, message: ClientMessage, from_port: Port) -> Result<Option<ServerMessage>, ActorServerHandleMessageError>
+    pub fn new_friend(&self) -> ActorServerFriend
     {
-        match message
+        ActorServerFriend
         {
-            ClientMessage::Name(name) => Ok(Some(ServerMessage::JoinResponse(
-                self.try_join_from_port(from_port, &name)?
-            ))),
-            _ => todo!()
+            uids: self.friend.uids.clone(),
+            send_queue: self.friend.send_queue.clone()
         }
-    }
-
-    fn try_join_from_port(self: &Self, port: Port, name: &str) -> Result<Port, SessionJoinError>
-    {
-        let mut uids = self.uids.write()?;
-        if uids.contains(&port)
-        {
-            return Err(SessionJoinError::AlreadyJoined)
-        }
-        uids.push(port);
-        Ok(port)
     }
 }
 
 impl Actor for ActorServer
 {
-    fn try_join(self: &mut Self, name: &str) -> Result<Port, SessionJoinError>
+    fn try_join(self: &mut Self, name: &str) -> Result<Port, RequestJoinError>
     {
-        self.try_join_from_port(self.port, name)
+        Ok(self.friend.try_join_from_port(self.port, name)??)
     }
 
     fn player_make_decision(self: &mut Self, uid: Port) -> Result<Option<Choice>, PlayerDecisionError>
