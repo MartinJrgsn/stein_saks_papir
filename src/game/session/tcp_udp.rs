@@ -21,6 +21,13 @@ impl SessionTcpUdp
 {
     pub fn new(ip: Option<IpAddr>, port: u16) -> Result<Self, NewSessionTcpError>
     {
+        if let (Some(ip), Ok(my_ip)) = (ip, Self::get_my_ip())
+        {
+            if ip == my_ip
+            {
+                return Self::new(None, port)
+            }
+        }
         Ok(match ip
         {
             Some(ip) => Self::new_client(SocketAddr::new(ip, port))?,
