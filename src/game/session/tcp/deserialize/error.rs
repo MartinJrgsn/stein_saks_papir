@@ -1,12 +1,11 @@
-use super::*;
-
-pub enum ClientMessageParseError
+pub enum DeserializeTcpError
 {
     InsufficientBufferLength(usize),
     NameParseError(std::string::FromUtf8Error),
-    UnrecognizedHeader(u8)
+    UnrecognizedHeader(u8),
+    DataParseError
 }
-impl From<std::string::FromUtf8Error> for ClientMessageParseError
+impl From<std::string::FromUtf8Error> for DeserializeTcpError
 {
     fn from(error: std::string::FromUtf8Error) -> Self
     {

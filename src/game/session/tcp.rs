@@ -1,6 +1,10 @@
 pub mod error;
+pub mod serialize;
+pub mod deserialize;
 
 pub use error::*;
+pub use serialize::*;
+pub use deserialize::*;
 
 use super::*;
 

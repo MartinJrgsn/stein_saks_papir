@@ -4,9 +4,9 @@ pub mod error;
 pub use message::*;
 pub use error::*;
 
-use std::{net::TcpListener, io::Read, sync::{RwLock, Arc}};
+use std::{net::TcpListener, io::{Read, Write}, sync::{RwLock, Arc}};
 
-use crate::game::SessionJoinError;
+use crate::game::{SessionJoinError, TryDeserializeTcp, SerializeTcp};
 
 use super::*;
 
@@ -47,15 +47,15 @@ impl ActorServer
             let mut message = vec![];
             stream.read(&mut message).expect("Unable to read");
 
-            match ClientMessage::try_from(message)
+            match ClientMessage::try_from_tcp_message(&message)
             {
                 Ok(message) => match self.handle_message(message, from_port)
                 {
                     Ok(Some(response)) => {
-                        todo!()
+                        stream.write_all(&response.into_tcp_message()).expect("Unable to write");
                     },
                     Err(error) => {
-                        todo!()
+                        
                     },
                     _ => ()
                 },

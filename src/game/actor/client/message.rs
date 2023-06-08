@@ -1,6 +1,4 @@
-pub mod error;
-
-pub use error::*;
+use crate::game::{TryDeserializeTcp, DeserializeTcpError};
 
 use super::*;
 
@@ -9,14 +7,12 @@ pub enum ClientMessage
     Select(Choice),
     Name(String)
 }
-impl TryFrom<Vec<u8>> for ClientMessage
+impl TryDeserializeTcp for ClientMessage
 {
-    type Error = ClientMessageParseError;
-
-    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error>
+    fn try_from_tcp_message(bytes: &[u8]) -> Result<Self, DeserializeTcpError>
     {
-        let header = *value.get(0)
-            .ok_or(ClientMessageParseError::InsufficientBufferLength(value.len()))?;
+        let header = *bytes.get(0)
+            .ok_or(DeserializeTcpError::InsufficientBufferLength(bytes.len()))?;
 
         if header < Choice::LENGTH as u8
         {
@@ -25,12 +21,12 @@ impl TryFrom<Vec<u8>> for ClientMessage
         match header as usize
         {
             Choice::LENGTH => Ok(ClientMessage::Name(
-                String::from_utf8(value.get(1..)
-                    .ok_or(ClientMessageParseError::InsufficientBufferLength(value.len()))?
+                String::from_utf8(bytes.get(1..)
+                    .ok_or(DeserializeTcpError::InsufficientBufferLength(bytes.len()))?
                     .to_vec()
                 )?
             )),
-            _ => Err(ClientMessageParseError::UnrecognizedHeader(header))
+            _ => Err(DeserializeTcpError::UnrecognizedHeader(header))
         }
     }
 }
