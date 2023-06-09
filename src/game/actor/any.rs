@@ -1,14 +1,14 @@
 use super::*;
 
-pub enum ActorAny
+pub enum ActorAny<const PLAYER_COUNT: usize>
 {
-    Server(ActorServer),
+    Server(ActorServer<PLAYER_COUNT>),
     Client(ActorClient)
 }
 
-impl ActorAny
+impl<const PLAYER_COUNT: usize> ActorAny<PLAYER_COUNT>
 {
-    pub fn new(session: &impl Session, port: Port) -> ActorAny
+    pub fn new(session: &impl Session<PLAYER_COUNT>, port: Port) -> Self
     {
         if session.is_host()
         {
@@ -21,7 +21,7 @@ impl ActorAny
     }
 }
 
-impl Actor for ActorAny
+impl<const PLAYER_COUNT: usize> Actor<PLAYER_COUNT> for ActorAny<PLAYER_COUNT>
 {
     fn try_join(self: &mut Self, name: &str) -> Result<Port, RequestJoinError>
     {
@@ -29,15 +29,6 @@ impl Actor for ActorAny
         {
             Self::Server(actor) => actor.try_join(name),
             Self::Client(actor) => actor.try_join(name)
-        }
-    }
-
-    fn player_make_decision(self: &mut Self, uid: Port) -> Result<Option<Choice>, PlayerDecisionError>
-    {
-        match self
-        {
-            Self::Server(actor) => actor.player_make_decision(uid),
-            Self::Client(actor) => actor.player_make_decision(uid)
         }
     }
 

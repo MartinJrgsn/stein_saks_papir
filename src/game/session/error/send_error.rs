@@ -1,3 +1,5 @@
+use super::*;
+
 #[derive(Debug)]
 pub enum SendError
 {
@@ -8,6 +10,13 @@ pub enum SendError
 impl<T> From<std::sync::PoisonError<T>> for SendError
 {
     fn from(value: std::sync::PoisonError<T>) -> Self
+    {
+        Self::ThreadPoisoned
+    }
+}
+impl From<PoisonError> for SendError
+{
+    fn from(error: PoisonError) -> Self
     {
         Self::ThreadPoisoned
     }

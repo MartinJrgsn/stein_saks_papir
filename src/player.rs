@@ -1,9 +1,8 @@
 pub mod human;
 
 pub use human::*;
-use crate::Actor;
 
-use crate::game::{Choice, Session};
+use super::*;
 
 pub trait Player
 {
@@ -19,13 +18,5 @@ pub trait Player
     {
         None
     }
-
-    fn make_decision(self: &mut Self, player_names: [String; 2], choice_log: &[[Choice; 2]], session: &mut dyn Session) -> Result<Option<Choice>, PlayerDecisionError>;
-
     fn get_name(&self) -> &str;
-}
-
-pub enum PlayerDecisionError
-{
-    Quit
 }

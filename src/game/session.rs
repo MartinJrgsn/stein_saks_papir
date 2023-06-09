@@ -8,10 +8,10 @@ pub use event::*;
 
 use super::*;
 
-pub trait Session
+pub trait Session<const PLAYER_COUNT: usize>
 {
     fn try_join(self: &mut Self, ui: &mut dyn UI) -> Result<(Port, String), RequestJoinError>;
-    fn player_make_decision(self: &mut Self, uid: Port) -> Result<Option<Choice>, PlayerDecisionError>;
+    fn get_actor(self: &Self) -> &ActorAny<PLAYER_COUNT>;
 
     fn is_host(self: &Self) -> bool;
     fn is_user(self: &Self, player: &dyn Player) -> bool;

@@ -10,14 +10,14 @@ use super::*;
 
 use std::{net::{SocketAddr, IpAddr, TcpListener, TcpStream}, thread::JoinHandle};
 
-pub struct SessionTcpUdp
+pub struct SessionTcpUdp<const PLAYER_COUNT: usize>
 {
     target: SocketAddr,
     tcp_thread: JoinHandle<TcpThreadError>,
-    actor: ActorAny
+    actor: ActorAny<PLAYER_COUNT>
 }
 
-impl SessionTcpUdp
+impl<const PLAYER_COUNT: usize> SessionTcpUdp<PLAYER_COUNT>
 {
     pub fn new(ip: Option<IpAddr>, port: u16) -> Result<Self, NewSessionTcpError>
     {
@@ -74,13 +74,13 @@ impl SessionTcpUdp
         })
     }
 
-    fn get_my_ip() -> Result<IpAddr, local_ip_address::Error>
+    pub fn get_my_ip() -> Result<IpAddr, local_ip_address::Error>
     {
         local_ip_address::local_ip()
     }
 }
 
-impl Session for SessionTcpUdp
+impl<const PLAYER_COUNT: usize> Session<PLAYER_COUNT> for SessionTcpUdp<PLAYER_COUNT>
 {
     fn try_join(self: &mut Self, ui: &mut dyn UI) -> Result<(Port, String), RequestJoinError>
     {
@@ -89,11 +89,11 @@ impl Session for SessionTcpUdp
         self.actor.try_join(&name)
             .map(|uid| (uid, name))
     }
-    fn player_make_decision(self: &mut Self, uid: Port) -> Result<Option<Choice>, PlayerDecisionError>
-    {
-        self.actor.player_make_decision(uid)
-    }
 
+    fn get_actor(self: &Self) -> &ActorAny<PLAYER_COUNT>
+    {
+        &self.actor
+    }
     fn is_host(self: &Self) -> bool
     {
         self.actor.is_host()

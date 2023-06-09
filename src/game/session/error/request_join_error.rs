@@ -1,5 +1,3 @@
-use std::sync::PoisonError;
-
 use super::*;
 
 #[derive(Debug)]
@@ -30,9 +28,16 @@ impl From<RequestError> for RequestJoinError
         Self::RequestError(error)
     }
 }
-impl<T> From<PoisonError<T>> for RequestJoinError
+impl<T> From<std::sync::PoisonError<T>> for RequestJoinError
 {
-    fn from(error: PoisonError<T>) -> Self
+    fn from(error: std::sync::PoisonError<T>) -> Self
+    {
+        Self::RequestError(error.into())
+    }
+}
+impl From<PoisonError> for RequestJoinError
+{
+    fn from(error: PoisonError) -> Self
     {
         Self::RequestError(error.into())
     }

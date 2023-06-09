@@ -75,7 +75,7 @@ impl ActorClient
     }
 }
 
-impl Actor for ActorClient
+impl<const PLAYER_COUNT: usize> Actor<PLAYER_COUNT> for ActorClient
 {
     fn try_join(self: &mut Self, name: &str) -> Result<Port, RequestJoinError>
     {
@@ -87,11 +87,6 @@ impl Actor for ActorClient
             },
             ServerMessage::Error(error) => Err(error.into())
         }
-    }
-
-    fn player_make_decision(self: &mut Self, uid: Port) -> Result<Option<Choice>, PlayerDecisionError>
-    {
-        todo!()
     }
 
     fn is_host(self: &Self) -> bool

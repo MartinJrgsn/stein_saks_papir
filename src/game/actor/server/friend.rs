@@ -1,11 +1,11 @@
 use super::*;
 
-pub struct ActorServerFriend
+pub struct ActorServerFriend<const PLAYER_COUNT: usize>
 {
-    pub(super) uids: Arc<RwLock<Vec<Port>>>,
+    pub(super) players: Arc<RwLock<[Option<Box<dyn Player + Send + Sync>>; PLAYER_COUNT]>>, // Use OrderedMap on nightly
     pub(super) send_queue: Arc<RwLock<Vec<ServerMessage>>>,
 }
-impl ActorServerFriend
+impl<const PLAYER_COUNT: usize> ActorServerFriend<PLAYER_COUNT>
 {
     fn handle_incoming_tcp(&self, stream: &mut TcpStream) -> Result<ServerResponse, TcpThreadError>
     {
@@ -61,15 +61,26 @@ impl ActorServerFriend
         }
     }
 
-    pub(super) fn try_join_from_port(self: &Self, port: Port, name: &str)
-        -> Result<Result<Port, JoinError>, std::sync::PoisonError<std::sync::RwLockWriteGuard<'_, Vec<u16>>>> 
+    pub(super) fn try_join_from_port(&self, port: Port, name: &str)
+        -> Result<Result<Port, JoinError>, PoisonError>
     {
-        let mut uids = self.uids.write()?;
-        if uids.contains(&port)
+        for player in self.players.write()?.iter_mut()
         {
-            return Ok(Err(JoinError::AlreadyJoined))
+            match player
+            {
+                None => {
+                    *player = Some(Box::new(Human::new(port, name.to_string())));
+                    return Ok(Ok(port))
+                },
+                Some(player) => if let Some(human) = player.as_human()
+                {
+                    if human.get_uid() == port
+                    {
+                        return Ok(Err(JoinError::AlreadyJoined))
+                    }
+                }
+            }
         }
-        uids.push(port);
-        Ok(Ok(port))
+        Ok(Err(JoinError::GameFull))
     }
 }

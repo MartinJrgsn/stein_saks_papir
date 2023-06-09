@@ -10,9 +10,8 @@ use super::*;
 
 pub type Port = u16;
 
-pub trait Actor
+pub trait Actor<const PLAYER_COUNT: usize>
 {
     fn try_join(self: &mut Self, name: &str) -> Result<Port, RequestJoinError>;
-    fn player_make_decision(self: &mut Self, uid: Port) -> Result<Option<Choice>, PlayerDecisionError>;
     fn is_host(self: &Self) -> bool;
 }

@@ -15,6 +15,13 @@ impl<T> From<std::sync::PoisonError<T>> for RequestError
         Self::SendError(error.into())
     }
 }
+impl From<PoisonError> for RequestError
+{
+    fn from(error: PoisonError) -> Self
+    {
+        Self::SendError(error.into())
+    }
+}
 impl From<std::time::SystemTimeError> for RequestError
 {
     fn from(error: std::time::SystemTimeError) -> Self
