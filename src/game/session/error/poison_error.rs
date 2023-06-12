@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct PoisonError;
 
 impl<T> From<std::sync::PoisonError<T>> for PoisonError

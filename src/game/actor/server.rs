@@ -8,9 +8,9 @@ pub use error::*;
 pub use friend::*;
 pub use connection::*;
 
-use std::{net::{TcpListener, TcpStream}, io::{Read, Write}, sync::{RwLock, Arc}, collections::HashMap};
+use std::{net::{TcpListener, TcpStream}, io::{Read, Write}, sync::{RwLock, Arc, RwLockWriteGuard, RwLockReadGuard}};
 
-use crate::game::{JoinError, TryDeserializeTcp, SerializeTcp, RequestError};
+use crate::game::{JoinError, TryDeserializeTcp, SerializeTcp};
 
 use super::*;
 
@@ -22,6 +22,9 @@ pub struct ActorServer<const PLAYER_COUNT: usize>
 
 impl<const PLAYER_COUNT: usize> ActorServer<PLAYER_COUNT>
 {
+    pub type PlayersReadGuard<'a> = RwLockReadGuard<'a, [Option<Box<dyn player::PlayerObj>>; PLAYER_COUNT]>;
+    pub type PlayersWriteGuard<'a> = RwLockWriteGuard<'a, [Option<Box<dyn player::PlayerObj>>; PLAYER_COUNT]>;
+
     pub fn new(port: Port) -> Self
     {
         Self
@@ -43,35 +46,42 @@ impl<const PLAYER_COUNT: usize> ActorServer<PLAYER_COUNT>
         }
     }
 
-    pub fn get_players(&self) -> Result<[Option<&(dyn Player + Send + Sync)>; PLAYER_COUNT], PoisonError>
+    pub fn get_players(&self) -> Result<([Option<&Box<dyn PlayerObj>>; PLAYER_COUNT], Self::PlayersReadGuard<'_>), PoisonError>
     {
-        let mut players = [None; PLAYER_COUNT];
-        let mut iter = self.friend.players.read()?.iter()
-            .map(|player|
-                player.map(|player| &*player)
-            );
-        players.fill_with(|| iter.next().unwrap());
-        Ok(players)
+        let guard = self.friend.players.read()?;
+        let players = guard.iter().map(|player| player.as_ref()).next_chunk().unwrap();
+        Ok((players, guard))
     }
-    pub fn get_players_or_wait(&self) -> Result<[&(dyn Player + Send + Sync); PLAYER_COUNT], PoisonError>
+    pub fn get_players_mut(&self) -> Result<([Option<&mut Box<dyn PlayerObj>>; PLAYER_COUNT], Self::PlayersWriteGuard<'_>), PoisonError>
+    {
+        let mut guard = self.friend.players.write()?;
+        let players = guard.iter_mut().map(|player| player.as_mut()).next_chunk().unwrap();
+        Ok((players, guard))
+    }
+    pub fn get_players_or_wait(&self) -> Result<([&Box<dyn PlayerObj>; PLAYER_COUNT], Self::PlayersReadGuard<'_>), PoisonError>
     {
         loop
         {
-            /* Better (with nightly):
-            if let Ok(players) = self.get_players()?.try_map(|player| player.ok_or(()))
+            let (players, guard) = self.get_players()?;
+            if let Ok(players) = players.try_map(|player| player.ok_or(()))
             {
-                return Ok(players)
-            }
-             */
-
-            let players = self.get_players()?;
-            if players.iter().all(|player| player.is_some())
-            {
-                return Ok(players.map(|player| player.unwrap()))
+                return Ok((players, guard))
             }
         }
     }
-    pub fn is_local(&self, human: &Human) -> bool
+    pub fn get_players_or_wait_mut(&self) -> Result<([&mut Box<dyn PlayerObj>; PLAYER_COUNT], Self::PlayersWriteGuard<'_>), PoisonError>
+    {
+        loop
+        {
+            let (mut players, guard) = self.get_players_mut()?;
+            if let Ok(players) = players.try_map(|player| player.ok_or(()))
+            {
+                return Ok((players, guard))
+            }
+        }
+    }
+    pub fn is_local<E>(&self, human: &Human<E>) -> bool
+    where E: HumanExtra
     {
         human.get_uid() == self.port
     }

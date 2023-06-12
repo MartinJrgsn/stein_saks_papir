@@ -15,8 +15,8 @@ use super::*;
 pub trait Game<const PLAYER_COUNT: usize>
 {
     type GameEndResult;
+    type UIType: ?Sized;
 
-    fn new(session: Box<dyn Session<PLAYER_COUNT>>);
-    fn get_player_names(&self) -> [String; PLAYER_COUNT];
-    fn game_loop(&mut self) -> Self::GameEndResult;
+    fn new(session: Box<dyn Session<PLAYER_COUNT>>) -> Self;
+    fn game_loop(&mut self, ui: &mut Self::UIType) -> Self::GameEndResult;
 }

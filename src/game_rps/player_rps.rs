@@ -1,46 +1,32 @@
+pub mod human_rps;
+
+use std::ops::CoerceUnsized;
+
+pub use human_rps::*;
+
 use super::*;
 
+#[derive(Debug)]
 pub enum PlayerDecision
 {
     Choose(Choice),
-    Undecided,
     Quit
 }
 
-pub trait PlayerRps: Player
+pub trait PlayerRps: PlayerRpsObj + TryConvert<dyn PlayerObj> + Upcast<dyn PlayerRpsObj> + DowncastFrom<dyn PlayerObj> + Is<dyn PlayerRpsObj>
 {
-    fn make_decision(self: &mut Self, actor: &mut ActorServer<2>, choice_log: &[[Choice; 2]]) -> Result<PlayerDecision, PlayerDecisionError>;
+    
 }
 
-impl PlayerRps for Human
+pub trait PlayerRpsObj: Player
 {
-    fn make_decision(self: &mut Self, actor: &mut ActorServer<2>, choice_log: &[[Choice; 2]]) -> Result<PlayerDecision, PlayerDecisionError>
-    {
-        if self.is_local(actor)
-        {
-            let players = actor.get_players_or_wait()?;
-            for mem in choice_log {
-                println!(
-                    "Previous choices: \n{0}: {1}, {2}: {3}",
-                    players[0].get_name(),
-                    mem[0],
-                    players[1].get_name(),
-                    mem[1]
-                );
-            }
-    
-            let mut input = String::new();
-            println!("{0} choose: Rock/Paper/Scissor:", self.get_name());
-            std::io::stdin().read_line(&mut input).expect("Failed to read input");
-            let cin = input.trim();
-            match cin 
-            {
-                "r" | "1" => Ok(PlayerDecision::Choose(Choice::Rock)),
-                "p" | "2" => Ok(PlayerDecision::Choose(Choice::Paper)),
-                "s" | "3" => Ok(PlayerDecision::Choose(Choice::Scissor)),
-                "q" => Ok(PlayerDecision::Quit),
-                _ => Ok(PlayerDecision::Undecided),
-            }
-        }
-    }
+    fn make_decision(
+        self: &mut Self,
+        actor: &ActorServer<2>,
+        choice_log: &[[Choice; 2]],
+        ui: &mut dyn UIRps
+    ) -> Result<Option<PlayerDecision>, PlayerDecisionError>;
+    fn upcast(self: &Self) -> &dyn PlayerObj;
+    fn upcast_mut(self: &mut Self) -> &mut dyn PlayerObj;
 }
+Is!(PlayerRpsObj);

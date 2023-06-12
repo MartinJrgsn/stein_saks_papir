@@ -28,7 +28,7 @@ impl<const PLAYER_COUNT: usize> Actor<PLAYER_COUNT> for ActorAny<PLAYER_COUNT>
         match self
         {
             Self::Server(actor) => actor.try_join(name),
-            Self::Client(actor) => actor.try_join(name)
+            Self::Client(actor) => Actor::<PLAYER_COUNT>::try_join(actor, name)
         }
     }
 
@@ -37,7 +37,7 @@ impl<const PLAYER_COUNT: usize> Actor<PLAYER_COUNT> for ActorAny<PLAYER_COUNT>
         match self
         {
             Self::Server(actor) => actor.is_host(),
-            Self::Client(actor) => actor.is_host()
+            Self::Client(actor) => Actor::<PLAYER_COUNT>::is_host(actor)
         }
     }
 }

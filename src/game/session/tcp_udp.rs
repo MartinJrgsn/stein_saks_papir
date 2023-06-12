@@ -82,9 +82,9 @@ impl<const PLAYER_COUNT: usize> SessionTcpUdp<PLAYER_COUNT>
 
 impl<const PLAYER_COUNT: usize> Session<PLAYER_COUNT> for SessionTcpUdp<PLAYER_COUNT>
 {
-    fn try_join(self: &mut Self, ui: &mut dyn UI) -> Result<(Port, String), RequestJoinError>
+    fn try_join(self: &mut Self, ui: &mut dyn UIRps) -> Result<(Port, String), RequestJoinError>
     {
-        let name = ui.promt_for_name(None);
+        let name = ui.promt_for_name(None)?;
 
         self.actor.try_join(&name)
             .map(|uid| (uid, name))
@@ -98,16 +98,16 @@ impl<const PLAYER_COUNT: usize> Session<PLAYER_COUNT> for SessionTcpUdp<PLAYER_C
     {
         self.actor.is_host()
     }
-    fn get_host_player_uid(self: &Self) -> Port
+    fn get_local_uid(self: &Self) -> Port
     {
         self.target.port()
     }
-    fn is_user(self: &Self, player: &dyn Player) -> bool
+    fn is_local(self: &Self, player: &dyn PlayerObj) -> bool
     {
         match player.as_human()
         {
-            Some(human) => self.get_host_player_uid() == human.get_uid(),
-            None => false
+            Some(human) => self.get_local_uid() == human.get_uid(),
+            None => self.actor.is_host()
         }
     }
 }

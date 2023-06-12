@@ -1,8 +1,9 @@
 use super::*;
 
+//dyn Player + Send + Sync
 pub struct ActorServerFriend<const PLAYER_COUNT: usize>
 {
-    pub(super) players: Arc<RwLock<[Option<Box<dyn Player + Send + Sync>>; PLAYER_COUNT]>>, // Use OrderedMap on nightly
+    pub(super) players: Arc<RwLock<[Option<Box<dyn PlayerObj>>; PLAYER_COUNT]>>, // Use OrderedMap on nightly
     pub(super) send_queue: Arc<RwLock<Vec<ServerMessage>>>,
 }
 impl<const PLAYER_COUNT: usize> ActorServerFriend<PLAYER_COUNT>
@@ -69,7 +70,7 @@ impl<const PLAYER_COUNT: usize> ActorServerFriend<PLAYER_COUNT>
             match player
             {
                 None => {
-                    *player = Some(Box::new(Human::new(port, name.to_string())));
+                    *player = Some(Box::new(Human::<()>::new(port, name.to_string())));
                     return Ok(Ok(port))
                 },
                 Some(player) => if let Some(human) = player.as_human()

@@ -10,10 +10,10 @@ use super::*;
 
 pub trait Session<const PLAYER_COUNT: usize>
 {
-    fn try_join(self: &mut Self, ui: &mut dyn UI) -> Result<(Port, String), RequestJoinError>;
+    fn try_join(self: &mut Self, ui: &mut dyn UIRps) -> Result<(Port, String), RequestJoinError>;
     fn get_actor(self: &Self) -> &ActorAny<PLAYER_COUNT>;
 
     fn is_host(self: &Self) -> bool;
-    fn is_user(self: &Self, player: &dyn Player) -> bool;
-    fn get_host_player_uid(self: &Self) -> Port;
+    fn is_local(self: &Self, player: &dyn PlayerObj) -> bool;
+    fn get_local_uid(self: &Self) -> Port;
 }

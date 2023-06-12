@@ -6,7 +6,8 @@ pub enum ApplicationError
     NewSessionTcpError(NewSessionTcpError),
     RequestJoinError(RequestJoinError),
     ThreadError(Box<dyn std::any::Any + Send + 'static>),
-    StdIoError(std::io::Error)
+    StdIoError(std::io::Error),
+    GameRpsError(GameRpsError)
 }
 impl From<std::io::Error> for ApplicationError
 {
@@ -41,5 +42,12 @@ impl From<RequestJoinError> for ApplicationError
     fn from(error: RequestJoinError) -> Self
     {
         Self::RequestJoinError(error)
+    }
+}
+impl From<GameRpsError> for ApplicationError
+{
+    fn from(error: GameRpsError) -> Self
+    {
+        Self::GameRpsError(error)
     }
 }

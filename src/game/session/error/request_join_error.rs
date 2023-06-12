@@ -5,7 +5,15 @@ pub enum RequestJoinError
 {
     JoinError(JoinError),
     RequestError(RequestError),
-    ServerErrorMessage(HandleClientMessageError)
+    ServerErrorMessage(HandleClientMessageError),
+    PromtError(PromtError)
+}
+impl From<PromtError> for RequestJoinError
+{
+    fn from(error: PromtError) -> Self
+    {
+        Self::PromtError(error)
+    }
 }
 impl From<HandleClientMessageError> for RequestJoinError
 {

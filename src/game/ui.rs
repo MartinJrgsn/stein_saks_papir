@@ -1,15 +1,12 @@
 pub mod tui;
+pub mod error;
 
 pub use tui::*;
+pub use error::*;
 
-pub enum NameError
-{
-    Taken,
-    Invalid,
-    Other
-}
+use super::*;
 
 pub trait UI
 {
-    fn promt_for_name(self: &mut Self, is_valid: Option<&dyn Fn(&str) -> Option<NameError>>) -> String;
+
 }
