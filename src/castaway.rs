@@ -1,27 +1,21 @@
 pub mod is;
-pub mod downcast_from;
-pub mod downcast_ref;
 pub mod downcast;
 pub mod upcast;
-pub mod try_upcast;
-pub mod as_any;
 pub mod veecast;
 pub mod dyncast;
 pub mod convert;
-pub mod convert_into;
-pub mod try_convert;
-pub mod try_convert_into;
+pub mod object;
+pub mod unsized_;
+mod private;
 
 pub use is::*;
-pub use downcast_from::*;
-pub use downcast_ref::*;
 pub use downcast::*;
 pub use upcast::*;
-pub use try_upcast::*;
 pub use as_any::*;
 pub use veecast::*;
 pub use dyncast::*;
 pub use convert::*;
-pub use convert_into::*;
-pub use try_convert::*;
-pub use try_convert_into::*;
+pub use object::*;
+pub use unsized_::*;
+
+use super::*;

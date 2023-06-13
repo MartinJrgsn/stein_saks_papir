@@ -10,6 +10,9 @@
 #![feature(inherent_associated_types)]
 #![feature(iter_next_chunk)]
 #![feature(array_try_map)]
+#![feature(auto_traits)]
+#![feature(never_type)]
+#![feature(associated_type_bounds)]
 
 pub mod game;
 pub mod game_rps;

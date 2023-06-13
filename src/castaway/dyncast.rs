@@ -1,33 +1,24 @@
+pub mod dyncast_obj;
+pub mod dyncast_ref;
+pub mod try_dyncast;
+
+pub use dyncast_obj::*;
+pub use dyncast_ref::*;
+pub use try_dyncast::*;
+
 use super::*;
 
-/*pub trait Dyncast<To, Alt>
-where
-    To: ?Sized,
-    Alt: ?Sized
+pub trait Dyncast<To>: DyncastRef<To>
 {
-    fn dyndowncast_ref(self: &Self) -> Option<&dyn TryUpcast<To, Alt>>;
-    fn dyndowncast_mut(self: &mut Self) -> Option<&mut dyn TryUpcast<To, Alt>>;
-    fn dyndowncast(self: Box<Self>) -> Result<Box<dyn TryUpcast<To, Alt>>, Box<Alt>>;
-    fn dyncast_ref(self: &Self) -> Option<&To>;
-    fn dyncast_mut(self: &mut Self) -> Option<&mut To>;
-    fn dyncast(self: Box<Self>) -> Result<Box<To>, Box<Alt>>;
+    fn dyncast(self: Box<Self>) -> Box<To>;
 }
-default impl<From, To, Alt> Dyncast<To, Alt> for From
+impl<From, To> Dyncast<To> for From
 where
-    From: ?Sized,
-    To: ?Sized,
-    Alt: ?Sized
+    From: DyncastRef<To> + IntoDyncastObj<To>,
+    dyn Upcast<To>: Upcast<To>
 {
-    fn dyncast_ref(self: &Self) -> Option<&To>
+    fn dyncast(self: Box<Self>) -> Box<To>
     {
-        self.dyndowncast_ref().and_then(|value| value.try_upcast_ref())
+        self.into_dyncast_obj().upcast()
     }
-    fn dyncast_mut(self: &mut Self) -> Option<&mut To>
-    {
-        self.dyndowncast_mut().and_then(|value| value.try_upcast_mut())
-    }
-    fn dyncast(self: Box<Self>) -> Result<Box<To>, Box<Alt>>
-    {
-        self.dyndowncast().and_then(|value| value.try_upcast())
-    }
-}*/
+}

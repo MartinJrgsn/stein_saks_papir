@@ -60,7 +60,8 @@ impl Game<2> for GameRps
                             {
                                 if choice.is_none()
                                 {
-                                    let player: &mut dyn PlayerRpsObj = <dyn PlayerRpsObj>::try_convert_get(&mut *player)?;
+                                    let human: &mut dyn HumanObj = <dyn HumanObj>::try_convert_get_mut(&mut *player)?;
+                                    let player: &mut dyn PlayerRpsObj = <dyn PlayerRpsObj>::try_convert_get_mut(&mut *player)?;
                                     match player.make_decision(
                                         actor,
                                         &self.choice_log,

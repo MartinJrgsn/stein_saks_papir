@@ -1,44 +1,30 @@
 use super::*;
 
-use std::{any::Any};
-
-pub trait Is<Trait>
+pub trait Is<Trait> = private::Is<Trait>
 where
-    Trait: ?Sized
+    Trait: ?Sized;
+pub trait IsObjOf<Type>: private::IsObjOf<Type>
+where
+    Type: ?Sized {}
+impl<Type, Trait> IsObjOf<Type> for Trait
+where
+    Type: Is<Trait> + ?Sized,
+    Trait: ?Sized {}
+pub trait IsImplOf<Obj>: Is<Obj>
+where
+    Obj: ?Sized
 {
-    
+    fn is(object: &Obj) -> bool
+    where Self: Sized;
 }
-pub macro Is($trait:path)
+impl<Struct, Obj> IsImplOf<Obj> for Struct
+where
+    Struct: AsAny + Is<Obj> + ?Sized,
+    Obj: ?Sized
 {
-    impl<T> Is<dyn $trait> for T where T: $trait + ?Sized {}
-    impl DowncastFrom<dyn $trait> for dyn $trait
+    fn is(object: &Obj) -> bool
+    where Self: Sized
     {
-        fn is(from: &dyn $trait) -> bool
-        {
-            true
-        }
-    
-        fn downcast_from_ref(from: &dyn $trait) -> Option<&Self>
-        {
-            Some(from)
-        }
-    
-        fn downcast_from_mut(from: &mut dyn $trait) -> Option<&mut Self>
-        {
-            Some(from)
-        }
-    
-        fn downcast_from(from: Box<dyn $trait>) -> Result<Box<Self>, Box<dyn $trait>>
-        {
-            Ok(from)
-        }
-    }
-    impl TryConvertInto<dyn $trait, dyn $trait> for dyn $trait
-    {
-        fn try_convert_into(self: Box<Self>) -> Result<Box<dyn $trait>, Box<dyn $trait>>
-        {
-            Ok(self)
-        }
+        object.as_any().is::<Struct>()
     }
 }
-Is!(Any);

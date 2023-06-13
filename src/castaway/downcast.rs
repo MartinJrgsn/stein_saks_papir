@@ -1,20 +1,28 @@
+pub mod downcast_from_ref;
+pub mod downcast_from;
+pub mod downcast_ref;
+
+pub use downcast_from_ref::*;
+pub use downcast_from::*;
+pub use downcast_ref::*;
+
 use super::*;
 
-pub trait Downcast<To, Alt>: DowncastRef<To>
+pub trait Downcast<To, Obj>: DowncastRef<To> + Is<Obj>
 where
-    To: Is<Self> + ?Sized,
-    Alt: ?Sized
+    To: ?Sized,
+    Obj: ?Sized
 {
-    fn downcast(self: Box<Self>) -> Result<Box<To>, Box<Alt>>;
+    fn downcast(self: Box<Self>) -> Result<Box<To>, Box<Obj>>;
 }
-default impl<From, To, Alt> Downcast<To, Alt> for From
+impl<From, To, Obj> Downcast<To, Obj> for From
 where
-    From: Upcast<Alt> + ?Sized,
-    To: Is<Self> + DowncastFrom<From> + ?Sized,
-    Alt: ?Sized
+    From: DowncastRef<To> + Is<Obj> + ?Sized,
+    To: DowncastFrom<Self, Obj> + ?Sized,
+    Obj: ?Sized
 {
-    fn downcast(self: Box<Self>) -> Result<Box<To>, Box<Alt>>
+    fn downcast(self: Box<Self>) -> Result<Box<To>, Box<Obj>>
     {
-        To::downcast_from(self).map_err(|alt| alt.upcast())
+        To::downcast_from(self)
     }
 }

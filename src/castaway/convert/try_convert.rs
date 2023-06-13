@@ -1,3 +1,7 @@
+pub mod try_convert_into;
+
+pub use try_convert_into::*;
+
 use std::marker::Unsize;
 
 use super::*;
@@ -13,8 +17,8 @@ where
 }
 impl<To, Obj> TryConvert<Obj> for To
 where
-    To: Is<Obj> + Unsize<Obj> + ?Sized,
-    Obj: TryConvertInto<To, Obj> + DowncastRef<To> + ?Sized
+    To: Is<Obj> + Unsize<Obj> + ?Sized + DowncastFromRef<Obj>,
+    Obj: Is<Obj> + TryConvertInto<To, Obj> + DowncastRef<To> + ?Sized
 {
     fn try_convert_from(object: Box<Obj>) -> Result<Box<Self>, Box<Obj>>
     {
@@ -22,12 +26,13 @@ where
     }
     fn try_convert(object: &mut Box<Obj>) -> bool
     {
-        if let Ok(converted) = object.try_convert_into()
+        todo!()
+        /*if let Ok(converted) = object.try_convert_into()
         {
             *object = converted;
             return true
         }
-        false
+        false*/
     }
     fn try_convert_get(object: &mut Box<Obj>) -> Option<&Self>
     {
@@ -35,7 +40,7 @@ where
         {
             return None
         }
-        (&**object).downcast_ref()
+        todo!()//(&**object).downcast_ref()
     }
     fn try_convert_get_mut(object: &mut Box<Obj>) -> Option<&mut Self>
     {
@@ -43,6 +48,6 @@ where
         {
             return None
         }
-        (&mut **object).downcast_mut()
+        todo!()//(&mut **object).downcast_mut()
     }
 }

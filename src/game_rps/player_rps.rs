@@ -1,6 +1,6 @@
 pub mod human_rps;
 
-use std::ops::CoerceUnsized;
+use std::{ops::CoerceUnsized, marker::Unsize};
 
 pub use human_rps::*;
 
@@ -13,12 +13,8 @@ pub enum PlayerDecision
     Quit
 }
 
-pub trait PlayerRps: PlayerRpsObj + TryConvert<dyn PlayerObj> + Upcast<dyn PlayerRpsObj> + DowncastFrom<dyn PlayerObj> + Is<dyn PlayerRpsObj>
-{
-    
-}
 
-pub trait PlayerRpsObj: Player
+pub trait PlayerRpsObj: PlayerObj + Upcast<dyn PlayerObj> + Is<dyn PlayerObj> + Unsize<dyn PlayerObj>
 {
     fn make_decision(
         self: &mut Self,
@@ -29,4 +25,14 @@ pub trait PlayerRpsObj: Player
     fn upcast(self: &Self) -> &dyn PlayerObj;
     fn upcast_mut(self: &mut Self) -> &mut dyn PlayerObj;
 }
-Is!(PlayerRpsObj);
+Object!(PlayerRpsObj);
+
+impl TryConvertInto<dyn PlayerRpsObj, dyn PlayerObj> for dyn PlayerObj
+{
+    fn try_convert_into(self: Box<Self>) -> Result<Box<dyn PlayerRpsObj>, Box<dyn PlayerObj>>
+    {
+        self.try_convert_into().map(|human: Box<HumanRps>| human as Box<dyn PlayerRpsObj>)
+    }
+}
+
+static_assertions::assert_impl_one!(dyn PlayerRpsObj: TryConvert<dyn PlayerObj>);

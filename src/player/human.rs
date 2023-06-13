@@ -60,11 +60,6 @@ impl Human<()>
         }
     }
 }
-impl<Extra> Player for Human<Extra>
-where Extra: HumanExtra
-{
-    
-}
 impl<Extra> PlayerObj for Human<Extra>
 where Extra: HumanExtra
 {
@@ -89,7 +84,7 @@ where Extra: HumanExtra
         Ok(self)
     }
 }
-/*impl<From, ToExtra, Obj> TryConvertInto<Human<ToExtra>, Obj> for From
+impl<From, ToExtra, Obj> TryConvertInto<Human<ToExtra>, Obj> for From
 where
     From: PlayerObj + Upcast<Obj> + ?Sized,
     Obj: Is<Obj> + Downcast<dyn HumanObj, Obj> + ?Sized,
@@ -99,4 +94,4 @@ where
     {
         Obj::downcast(From::upcast(self)).map(|human| human.convert_into())
     }
-}*/
+}

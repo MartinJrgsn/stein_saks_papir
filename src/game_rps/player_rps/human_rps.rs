@@ -6,15 +6,6 @@ use super::*;
 
 pub type HumanRps = Human<HumanRpsExtra>;
 
-impl Player for HumanRps
-{
-    
-}
-impl PlayerRps for HumanRps
-{
-    
-}
-
 impl PlayerRpsObj for HumanRps
 {
     fn make_decision(
@@ -40,15 +31,5 @@ impl PlayerRpsObj for HumanRps
     fn upcast_mut(self: &mut Self) -> &mut dyn PlayerObj
     {
         self
-    }
-}
-impl<From> TryConvertInto<dyn PlayerRpsObj, dyn PlayerObj> for From
-where
-    From: PlayerObj + ?Sized,
-    dyn PlayerRpsObj: PlayerObj
-{
-    fn try_convert_into(self: Box<Self>) -> Result<Box<dyn PlayerRpsObj>, Box<dyn Player>>
-    {
-        self.into_human().map(|human| HumanRps::convert_from(human))
     }
 }

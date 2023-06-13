@@ -1,16 +1,16 @@
 use super::*;
 
-pub trait DowncastRef<To>
+pub trait DowncastRef<To>: IsObjOf<To>
 where
-    To: Is<Self> + ?Sized
+    To: ?Sized
 {
     fn downcast_ref(self: &Self) -> Option<&To>;
     fn downcast_mut(self: &mut Self) -> Option<&mut To>;
 }
-default impl<From, To> DowncastRef<To> for From
+impl<From, To> DowncastRef<To> for From
 where
     From: ?Sized,
-    To: DowncastFrom<From> + ?Sized
+    To: DowncastFromRef<From> + ?Sized
 {
     fn downcast_ref(self: &Self) -> Option<&To>
     {
