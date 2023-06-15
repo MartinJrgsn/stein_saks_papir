@@ -1,0 +1,1 @@
+for<'a> fn(&'a Self, Recipient) -> Result<Option<Message>, receive_error::ReceiveError> {<Self as ReceiveMessage<Message, Recipient>>::receive_once}

@@ -1,0 +1,1 @@
+Result<([&Box<dyn player::PlayerObj>; PLAYER_COUNT], RwLockReadGuard<'_, [Option<Box<dyn player::PlayerObj>>; PLAYER_COUNT]>), poison_error::PoisonError>

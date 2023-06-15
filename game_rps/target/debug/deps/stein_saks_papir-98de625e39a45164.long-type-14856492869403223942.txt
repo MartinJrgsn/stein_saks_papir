@@ -1,0 +1,1 @@
+Result<([&mut Box<(dyn player::PlayerObj + 'static)>; PLAYER_COUNT], RwLockWriteGuard<'_, [Option<Box<(dyn player::PlayerObj + 'static)>>; PLAYER_COUNT]>), poison_error::PoisonError>
