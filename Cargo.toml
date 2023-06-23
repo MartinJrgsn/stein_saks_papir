@@ -3,6 +3,7 @@ members = [
     "option_kind",
     "result_kind",
     "repeat_until",
+    "atomic_buffer",
     "networked",
     "spellcast",
     #"game",
