@@ -18,6 +18,18 @@ use crate::transport::{Transport, Port};
 
 use super::*;
 
+pub struct Session
+{
+
+}
+impl Session
+{
+    pub fn get_my_ip() -> Result<IpAddr, local_ip_address::Error>
+    {
+        local_ip_address::local_ip()
+    }
+}
+
 #[derive(Debug)]
 pub enum SessionKind
 {
@@ -47,18 +59,6 @@ impl Display for SessionKind
     }
 }
 
-pub struct Session
-{
-
-}
-
-impl Session
-{
-    pub fn get_my_ip() -> Result<IpAddr, local_ip_address::Error>
-    {
-        local_ip_address::local_ip()
-    }
-}
 
 pub trait SessionObj
 {
