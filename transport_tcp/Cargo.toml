@@ -1,0 +1,13 @@
+[package]
+name = "transport_tcp"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+moddef = {path = "../moddef"}
+atomic_buffer = {path = "../atomic_buffer"}
+transport = {path = "../transport"}
+serde = { version = "1.0", features = ["derive"] }
+local-ip-address = "0.5.3"

@@ -5,6 +5,8 @@ members = [
     "result_kind",
     "repeat_until",
     "atomic_buffer",
+    "transport",
+    "transport_tcp",
     "networked",
     "spellcast",
     #"game",
