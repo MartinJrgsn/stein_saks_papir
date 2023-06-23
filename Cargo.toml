@@ -4,6 +4,7 @@ members = [
     "option_kind",
     "result_kind",
     "repeat_until",
+    "poison_error_obj",
     "atomic_buffer",
     "transport",
     "transport_tcp",
