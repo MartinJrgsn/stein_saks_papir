@@ -6,3 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+option_kind = {path = "../option_kind"}
+result_kind = {path = "../result_kind"}

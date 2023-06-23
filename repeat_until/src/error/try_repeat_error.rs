@@ -5,6 +5,17 @@ pub enum TryRepeatError<FnError>
     RepeatError(RepeatError),
     FnError(FnError)
 }
+impl<FnError> TryRepeatError<FnError>
+{
+    pub fn flat_map(self, map: impl Fn(RepeatError) -> FnError) -> FnError
+    {
+        match self
+        {
+            Self::RepeatError(error) => map(error),
+            Self::FnError(error) => error
+        }
+    }
+}
 impl<FnError> From<std::time::SystemTimeError> for TryRepeatError<FnError>
 {
     fn from(error: std::time::SystemTimeError) -> Self
