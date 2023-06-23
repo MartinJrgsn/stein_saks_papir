@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "moddef",
     "option_kind",
     "result_kind",
     "repeat_until",
