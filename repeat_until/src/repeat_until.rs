@@ -1,6 +1,6 @@
 use std::{time::{SystemTime, Duration}, marker::Tuple};
 
-use option_kind::OptionKind;
+use option_trait::{Optional, Maybe};
 use result_kind::ResultKind;
 
 use super::*;
@@ -27,11 +27,11 @@ where
     F: Fn<Args> + ?Sized,
     Args: Tuple + Copy + ?Sized {}
 
-pub trait RepeatUntilSome<Args>: Fn<Args, Output: OptionKind> + RepeatUntil<Args>
+pub trait RepeatUntilSome<Args>: Fn<Args, Output: Optional> + RepeatUntil<Args>
 where
     Args: Tuple + Copy + ?Sized
 {
-    fn repeat_until_some(&self, args: Args, timeout: Duration) -> Result<<Self::Output as OptionKind>::Some, RepeatError>
+    fn repeat_until_some(&self, args: Args, timeout: Duration) -> Result<<Self::Output as Optional>::Some, RepeatError>
     {
         let begin_time = SystemTime::now();
         loop
@@ -49,7 +49,7 @@ where
 }
 impl<F, Args> RepeatUntilSome<Args> for F
 where
-    F: Fn<Args, Output: OptionKind> + ?Sized,
+    F: Fn<Args, Output: Optional> + ?Sized,
     Args: Tuple + Copy + ?Sized {}
 
 pub trait RepeatUntilBool<Args>: Fn<Args, Output = bool> + RepeatUntil<Args>
@@ -99,13 +99,13 @@ where
     F: Fn<Args, Output: ResultKind> + ?Sized,
     Args: Tuple + Copy + ?Sized {}
 
-pub trait TryRepeatUntilSome<Args>: Fn<Args, Output: ResultKind<Ok: OptionKind>>
+pub trait TryRepeatUntilSome<Args>: Fn<Args, Output: ResultKind<Ok: Optional>>
 where
     Args: Tuple + Copy + ?Sized
 {
     fn try_repeat_until_some(&self, args: Args, timeout: Duration)
         -> Result<
-            <<<Self as FnOnce<Args>>::Output as ResultKind>::Ok as OptionKind>::Some,
+            <<<Self as FnOnce<Args>>::Output as ResultKind>::Ok as Optional>::Some,
             TryRepeatError<<<Self as FnOnce<Args>>::Output as ResultKind>::Err>
         >
     {

@@ -1,7 +1,8 @@
-moddef::pub_flat_mods!(
-    transport_obj
-    transport
-    stream_transport
-    listener_transport
-    serde_transport
+moddef::moddef!(
+    flat(pub) mod {
+        transport_obj,
+        transport,
+        stream_transport,
+        listener_transport
+    }
 );

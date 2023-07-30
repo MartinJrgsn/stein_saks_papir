@@ -4,6 +4,7 @@ use atomic_buffer::{AtomicBuffer, AtomicBufferWeak};
 
 use super::*;
 
+/// A stream running in a paralell process (another thread)
 pub struct ParaStream<MessageType, TransportType>
 where
     TransportType: StreamTransport<MessageType>

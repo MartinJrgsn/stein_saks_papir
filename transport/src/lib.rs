@@ -1,11 +1,13 @@
 #![feature(is_some_and)]
 
-moddef::flat_pub_mods!(
-    error
-    transport
-    com
-);
-moddef::pub_flat_mods!(
-    para_listener
-    para_stream
+moddef::moddef!(
+    pub flat mod {
+        error,
+        transport,
+        com
+    },
+    flat(pub) mod {
+        para_listener,
+        para_stream
+    }
 );
