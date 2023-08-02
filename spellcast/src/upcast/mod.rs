@@ -1,15 +1,12 @@
-pub mod try_upcast_from_ref;
-pub mod try_upcast_from;
-pub mod try_upcast_ref;
-pub mod try_upcast;
-pub mod upcast_from;
-pub mod upcast;
-
-pub use try_upcast_from_ref::*;
-pub use try_upcast_from::*;
-pub use try_upcast_ref::*;
-pub use try_upcast::*;
-pub use upcast_from::*;
-pub use upcast::*;
+moddef::moddef!(
+    flat(pub) mod {
+        try_upcast_from_ref,
+        try_upcast_from,
+        try_upcast_ref,
+        try_upcast,
+        upcast_from,
+        upcast_
+    }
+);
 
 use super::*;

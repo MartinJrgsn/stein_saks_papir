@@ -4,23 +4,24 @@
 #![feature(trait_alias)]
 #![feature(specialization)]
 
-pub mod downcast;
-pub mod upcast;
-pub mod veecast;
-pub mod dyncast;
-
-pub mod is;
-pub mod as_any;
-pub mod convert;
-pub mod object;
-
-pub use is::*;
-pub use as_any::*;
-pub use convert::*;
-pub use object::*;
+moddef::moddef!(
+    pub mod {
+        downcast,
+        upcast,
+        veecast,
+        dyncast,
+        convert
+    },
+    flat(pub) mod {
+        is,
+        as_any,
+        object
+    }
+);
 
 #[cfg(test)]
 mod tests {
+    #[allow(unused)]
     use super::*;
 
     #[test]

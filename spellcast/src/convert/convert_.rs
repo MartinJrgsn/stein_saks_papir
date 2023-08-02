@@ -1,7 +1,5 @@
 use std::marker::Unsize;
 
-use crate::convert_into::ConvertInto;
-
 use super::*;
 
 pub trait Convert<Obj>: Is<Obj>

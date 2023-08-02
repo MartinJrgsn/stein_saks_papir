@@ -1,14 +1,12 @@
-pub mod dyncast_obj;
-pub mod dyncast_ref;
-pub mod dyncast;
-pub mod try_dyncast_ref;
-pub mod try_dyncast;
-
-pub use dyncast_obj::*;
-pub use dyncast_ref::*;
-pub use dyncast::*;
-pub use try_dyncast_ref::*;
-pub use try_dyncast::*;
+moddef::moddef!(
+    flat(pub) mod {
+        dyncast_obj,
+        dyncast_ref,
+        dyncast_,
+        try_dyncast_ref,
+        try_dyncast
+    }
+);
 
 use super::*;
 
