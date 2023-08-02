@@ -1,5 +1,6 @@
 use poison_error_obj::{PoisonErrorUnguarded, PoisonErrorObj};
 
+#[derive(Debug)]
 pub enum BufferError
 {
     NullPointerError,

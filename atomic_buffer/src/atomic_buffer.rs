@@ -2,7 +2,7 @@ use std::{sync::{Arc, PoisonError, Mutex, MutexGuard}, collections::VecDeque};
 
 use crate::AtomicBufferWeak;
 
-#[derive(Clone)]
+#[derive(Debug)]
 pub struct AtomicBuffer<T>(pub(super) Arc<Mutex<VecDeque<T>>>);
 
 impl<T> AtomicBuffer<T>
@@ -29,3 +29,10 @@ impl<T> AtomicBuffer<T>
     }
 }
 
+impl<T> Clone for AtomicBuffer<T>
+{
+    fn clone(&self) -> Self
+    {
+        Self(self.0.clone())
+    }
+}
