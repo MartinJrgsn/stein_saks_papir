@@ -2,7 +2,7 @@ use std::sync::{Weak, RwLock};
 
 use atomic_buffer::AtomicBufferWeak;
 
-use crate::error::SpawnThreadError;
+use crate::{error::SpawnThreadError, ReceiveBuffer};
 
 use super::Transport;
 
@@ -12,12 +12,15 @@ pub trait StreamTransport<MessageType>: Transport
     type StreamArgs: Send + 'static;
     type SpawnStreamError: From<SpawnThreadError>;
     
-    fn stream_loop(
-        transport: Weak<RwLock<Self>>,
-        buffer: AtomicBufferWeak<MessageType>,
-        args: Self::StreamArgs
+    fn stream_loop<B>(
+        transport: &Weak<RwLock<Self>>,
+        buffer_send: &AtomicBufferWeak<MessageType>,
+        buffer_receive: &B,
+        args: &mut Self::StreamArgs
     )
-        -> Self::StreamError;
+        -> Result<(), Self::StreamError>
+    where
+        B: ReceiveBuffer<MessageType, Self>;
     
-    fn new_stream_args(target: Self::Target) -> Result<(Self::Id, Self::StreamArgs), Self::SpawnStreamError>;
+    fn connect_stream(target: Self::Target) -> Result<(Self::Target, Self::StreamArgs), Self::SpawnStreamError>;
 }
