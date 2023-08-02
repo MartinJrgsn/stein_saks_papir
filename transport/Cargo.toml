@@ -10,3 +10,4 @@ moddef = "0.2.2"
 poison_error_obj = {path = "../poison_error_obj"}
 repeat_until = {path = "../repeat_until"}
 atomic_buffer = {path = "../atomic_buffer"}
+serde = { version = "1.0", features = ["derive"] }
