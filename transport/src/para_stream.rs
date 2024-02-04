@@ -4,7 +4,7 @@ use atomic_buffer::{AtomicBuffer, AtomicBufferWeak, error::BufferError};
 
 use super::*;
 
-/// A stream running in a paralell process (another thread)
+/// A stream running in a parallel process (another thread)
 #[derive(Debug)]
 pub struct ParaStream<MessageType, TransportType, BufferReceive = AtomicBuffer<Result<MessageType, <TransportType as Transport>::MessageError>>>
 where
@@ -164,7 +164,7 @@ where
         Ok(self)
     }
 
-    pub fn send<'a>(&'a self, message: M) -> Result<(), T::StreamError>
+    pub fn send(&self, message: M) -> Result<(), T::StreamError>
     where
         T::StreamError: From<BufferError>
     {
