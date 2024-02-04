@@ -45,13 +45,11 @@ mod test
             listener: &Arc<RwLock<ParaListener::<String, TransportTcp>>>,
             target: SocketAddr
         )
-            -> Result<bool, TcpListenerError<SocketAddr>>
+            -> Result<(), TcpListenerError<SocketAddr>>
         {
             let (events, result) = listener.write()
                 .unwrap()
                 .update_connections();
-
-            let result = result.map(|()| events.len() != 0);
 
             for (addr, event) in events
             {

@@ -24,8 +24,25 @@ impl<T> AtomicBufferWeak<T>
     {
         Ok(self.arc()?.lock()?.pop_front())
     }
-}
 
+    #[must_use]
+    pub fn filter_pop_front(&self, filter: impl Fn(&T) -> bool) -> Result<Option<T>, BufferError>
+    {
+        let arc = self.arc()?;
+        let mut vec = arc.lock()?;
+
+        for (n, e) in vec.iter()
+            .enumerate()
+        {
+            if filter(e)
+            {
+                return Ok(vec.remove(n))
+            }
+        }
+
+        Ok(None)
+    }
+}
 impl<T> Clone for AtomicBufferWeak<T>
 {
     fn clone(&self) -> Self

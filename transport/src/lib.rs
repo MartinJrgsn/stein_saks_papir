@@ -6,8 +6,7 @@ moddef::moddef!(
     pub flat mod {
         error,
         event,
-        transport,
-        com
+        transport
     },
     flat(pub) mod {
         para_listener,

@@ -1,6 +1,7 @@
 use std::{sync::{RwLock, Weak}, thread::JoinHandle, collections::{HashMap, VecDeque}};
 
 use atomic_buffer::{AtomicBuffer, AtomicBufferWeak, error::BufferError};
+use repeat_until::RepeatError;
 
 use super::*;
 
@@ -153,7 +154,20 @@ where
         self.connections.drain().collect()
     }
 
-    pub fn send<'a>(&'a self, target: T::Target, message: M) -> Result<(), T::ListenerError>
+    pub fn send_all(&self, message: M) -> Result<(), T::ListenerError>
+    where
+        T::StreamError: From<BufferError>,
+        T::ListenerError: From<T::StreamError>
+    {
+        for connection in self.connections.values()
+        {
+            connection.send(message.clone())?;
+        }
+
+        Ok(())
+    }
+
+    pub fn send(&self, target: T::Target, message: M) -> Result<(), T::ListenerError>
     where
         T::StreamError: From<BufferError>,
         T::ListenerError: From<T::StreamError>
@@ -167,11 +181,19 @@ where
         }
     }
 
-    pub fn receive<'a>(&'a self)
+    pub fn receive(&self)
         -> Result<Option<(T::Target, Result<M, T::MessageError>)>, T::ListenerError>
     where
         T::ListenerError: From<BufferError>
     {
         Ok(self.buffer_receive.pop_front().map_err(Into::into)?)
+    }
+
+    pub fn receive_from(&self, target: T::Target)
+    -> Result<Option<Result<M, T::MessageError>>, T::ListenerError>
+    where
+        T::ListenerError: From<BufferError>
+    {
+        Ok(self.buffer_receive.filter_pop_front(|(t, _)| *t == target).map_err(Into::into).map(|m| m.map(|(_, m)| m))?)
     }
 }
