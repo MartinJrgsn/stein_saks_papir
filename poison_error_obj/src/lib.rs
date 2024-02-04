@@ -1,4 +1,6 @@
-pub trait PoisonErrorObj: std::fmt::Debug + std::fmt::Display + std::error::Error
+use thiserror::Error;
+
+pub trait PoisonErrorObj: std::error::Error
 {
 
 }
@@ -16,7 +18,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Error, Debug, Clone, Copy)]
 pub struct PoisonErrorUnguarded;
 impl std::fmt::Display for PoisonErrorUnguarded
 {
@@ -25,7 +27,6 @@ impl std::fmt::Display for PoisonErrorUnguarded
         write!(f, "Poison Error (guard dropped)")
     }
 }
-impl std::error::Error for PoisonErrorUnguarded {}
 impl PoisonErrorObj for PoisonErrorUnguarded {}
 impl From<PoisonErrorUnguarded> for Box<dyn PoisonErrorObj>
 {
