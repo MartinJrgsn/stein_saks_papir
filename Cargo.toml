@@ -6,7 +6,6 @@ members = [
     "transport",
     "transport_tcp",
     "networked",
-    "spellcast",
     #"game",
     #"game_rps"
 ]
