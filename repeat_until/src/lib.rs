@@ -4,9 +4,19 @@
 #![feature(associated_type_bounds)]
 #![feature(fn_traits)]
 
-pub mod repeat_until;
-pub mod error;
-mod tests;
+moddef::moddef!(
+    flat(pub) mod {
+        repeat_until,
+        error
+    }
+);
 
-pub use repeat_until::*;
-pub use error::*;
+#[cfg(test)]
+mod tests
+{
+    #[test]
+    fn test()
+    {
+        
+    }
+}

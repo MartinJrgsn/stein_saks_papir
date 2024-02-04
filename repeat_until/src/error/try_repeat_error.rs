@@ -1,5 +1,8 @@
+use thiserror::Error;
+
 use super::*;
 
+#[derive(Error, Debug, Clone)]
 pub enum TryRepeatError<FnError>
 {
     RepeatError(RepeatError),

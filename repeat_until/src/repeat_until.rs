@@ -1,7 +1,6 @@
-use std::{time::{SystemTime, Duration}, marker::Tuple};
+use std::{marker::Tuple, ops::Try, time::{Duration, SystemTime}};
 
 use option_trait::{Optional, Maybe};
-use result_kind::ResultKind;
 
 use super::*;
 
@@ -16,7 +15,7 @@ where
         {
             if begin_time.elapsed()? >= timeout
             {
-                return Err(RepeatError::Timeout(timeout))
+                return Err(RepeatError::from(TimeoutError(timeout)))
             }
         }
         Ok(())
@@ -42,7 +41,7 @@ where
             }
             if begin_time.elapsed()? >= timeout
             {
-                return Err(RepeatError::Timeout(timeout))
+                return Err(RepeatError::from(TimeoutError(timeout)))
             }
         }
     }
@@ -72,23 +71,23 @@ where
 
 // TRY
 
-pub trait TryRepeatUntil<Args>: Fn<Args, Output: ResultKind>
+pub trait TryRepeatUntil<Args>: Fn<Args, Output: Try + Into<Result<<<Self as FnOnce<Args>>::Output as Try>::Output, <<Self as FnOnce<Args>>::Output as Try>::Residual>>>
 where
     Args: Tuple + Copy + ?Sized
 {
     fn try_repeat_until(
         &self,
-        criteria: impl Fn(<<Self as FnOnce<Args>>::Output as ResultKind>::Ok) -> bool,
+        criteria: impl Fn(<<Self as FnOnce<Args>>::Output as Try>::Output) -> bool,
         args: Args,
         timeout: Duration
-    ) -> Result<(), TryRepeatError<<<Self as FnOnce<Args>>::Output as ResultKind>::Err>>
+    ) -> Result<(), TryRepeatError<<<Self as FnOnce<Args>>::Output as Try>::Residual>>
     {
         let begin_time = SystemTime::now();
-        while !criteria(self.call(args).into_result().map_err(|error| TryRepeatError::FnError(error))?)
+        while !criteria(self.call(args).into().map_err(|error| TryRepeatError::FnError(error))?)
         {
             if begin_time.elapsed()? >= timeout
             {
-                return Err(RepeatError::Timeout(timeout).into())
+                return Err(RepeatError::from(TimeoutError(timeout)).into())
             }
         }
         Ok(())
@@ -96,24 +95,24 @@ where
 }
 impl<F, Args> TryRepeatUntil<Args> for F
 where
-    F: Fn<Args, Output: ResultKind> + ?Sized,
+    F: Fn<Args, Output: Try + Into<Result<<<Self as FnOnce<Args>>::Output as Try>::Output, <<Self as FnOnce<Args>>::Output as Try>::Residual>>> + ?Sized,
     Args: Tuple + Copy + ?Sized {}
 
-pub trait TryRepeatUntilSome<Args>: Fn<Args, Output: ResultKind<Ok: Optional>>
+pub trait TryRepeatUntilSome<Args>: Fn<Args, Output: Try<Output: Optional> + Into<Result<<<Self as FnOnce<Args>>::Output as Try>::Output, <<Self as FnOnce<Args>>::Output as Try>::Residual>>>
 where
     Args: Tuple + Copy + ?Sized
 {
     fn try_repeat_until_some(&self, args: Args, timeout: Duration)
         -> Result<
-            <<<Self as FnOnce<Args>>::Output as ResultKind>::Ok as Optional>::Some,
-            TryRepeatError<<<Self as FnOnce<Args>>::Output as ResultKind>::Err>
+            <<<Self as FnOnce<Args>>::Output as Try>::Output as Optional>::Some,
+            TryRepeatError<<<Self as FnOnce<Args>>::Output as Try>::Residual>
         >
     {
         let begin_time = SystemTime::now();
         loop
         {
             if let Some(value) = self.call(args)
-                .into_result()
+                .into()
                 .map_err(|error| TryRepeatError::FnError(error))?
                 .into_option()
             {
@@ -121,32 +120,32 @@ where
             }
             if begin_time.elapsed()? >= timeout
             {
-                return Err(RepeatError::Timeout(timeout).into())
+                return Err(RepeatError::from(TimeoutError(timeout)).into())
             }
         }
     }
 }
 impl<F, Args, T> TryRepeatUntilSome<Args> for F
 where
-    F: Fn<Args, Output: ResultKind<Ok = Option<T>>> + ?Sized,
+    F: Fn<Args, Output: Try<Output = Option<T>> + Into<Result<<<Self as FnOnce<Args>>::Output as Try>::Output, <<Self as FnOnce<Args>>::Output as Try>::Residual>>> + ?Sized,
     Args: Tuple + Copy + ?Sized {}
 
-pub trait TryRepeatUntilBool<Args>: Fn<Args, Output: ResultKind<Ok = bool>> + TryRepeatUntil<Args>
+pub trait TryRepeatUntilBool<Args>: Fn<Args, Output: Try<Output = bool>> + TryRepeatUntil<Args>
 where
     Args: Tuple + Copy + ?Sized
 {
     fn try_repeat_until_true(&self, args: Args, timeout: Duration)
-        -> Result<(), TryRepeatError<<<Self as FnOnce<Args>>::Output as ResultKind>::Err>>
+        -> Result<(), TryRepeatError<<<Self as FnOnce<Args>>::Output as Try>::Residual>>
     {
         self.try_repeat_until(|value| value == true, args, timeout)
     }
     fn try_repeat_until_false(&self, args: Args, timeout: Duration)
-        -> Result<(), TryRepeatError<<<Self as FnOnce<Args>>::Output as ResultKind>::Err>>
+        -> Result<(), TryRepeatError<<<Self as FnOnce<Args>>::Output as Try>::Residual>>
     {
         self.try_repeat_until(|value| value == false, args, timeout)
     }
 }
 impl<F, Args> TryRepeatUntilBool<Args> for F
 where
-    F: Fn<Args, Output: ResultKind<Ok = bool>> + ?Sized,
+    F: Fn<Args, Output: Try<Output = bool> + Into<Result<bool, <<Self as FnOnce<Args>>::Output as Try>::Residual>>> + ?Sized,
     Args: Tuple + Copy + ?Sized {}
