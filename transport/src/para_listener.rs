@@ -1,7 +1,6 @@
 use std::{sync::{RwLock, Weak}, thread::JoinHandle, collections::{HashMap, VecDeque}};
 
 use atomic_buffer::{AtomicBuffer, AtomicBufferWeak, error::BufferError};
-use repeat_until::RepeatError;
 
 use super::*;
 

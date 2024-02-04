@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "repeat_until",
     "poison_error_obj",
     "atomic_buffer",
     "transport",
