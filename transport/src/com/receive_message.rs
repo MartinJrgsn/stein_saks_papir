@@ -1,19 +1,23 @@
-use std::time::Duration;
+use std::{ops::Try, time::Duration};
 
-use repeat_until::TryRepeatUntilSome;
-
-use crate::error::TimeoutError;
+use repeat_until::{RepeatError, TimeoutError, TryRepeatError, TryRepeatUntilSome};
 
 pub trait ReceiveMessage<Message, Recipient>
 where
     Recipient: Copy
 {
-    type ReceiveError: From<TimeoutError>;
+    type ReceiveError: From<RepeatError>;
 
     fn receive_once(&self, from: Recipient) -> Result<Option<Message>, Self::ReceiveError>;
     fn receive_or_wait(&self, from: Recipient, timeout: Duration) -> Result<Message, Self::ReceiveError>
+    where   
+        Result<Option<Message>, Self::ReceiveError>: Try<Output = Option<Message>, Residual = Self::ReceiveError>
     {
         Self::receive_once.try_repeat_until_some((self, from), timeout)
-            .map_err(|error| error.flat_map(|error| TimeoutError::from(error).into()))
+            .map_err(|error| match error
+            {
+                TryRepeatError::RepeatError(error) => error.into(),
+                TryRepeatError::FnError(error) => error,
+            })
     }
 }

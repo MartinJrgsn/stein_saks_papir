@@ -1,3 +1,5 @@
+#![feature(try_trait_v2)]
+
 #![feature(is_some_and)]
 
 moddef::moddef!(

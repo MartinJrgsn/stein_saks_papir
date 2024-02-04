@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{ops::Try, time::Duration};
 
 use crate::error::RequestError;
 
@@ -22,6 +22,9 @@ where
     #[must_use]
     fn send_request(&mut self, to: Recipient, request: Request, timeout: Duration)
         -> Result<Response, RequestError<Self::OnRequestError, Self::SendError, Self::ReceiveError>>
+    where
+        Result<bool, Self::SendError>: Try<Output = bool, Residual = Self::SendError>,
+        Result<Option<Response>, Self::ReceiveError>: Try<Output = Option<Response>, Residual = Self::ReceiveError>
     {
         self.send_message(to, request, timeout)
             .map_err(|error| RequestError::SendError(error))?;
