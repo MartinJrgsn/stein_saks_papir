@@ -1,6 +1,7 @@
 use std::{sync::{Weak, RwLock}, thread::JoinHandle};
 
 use atomic_buffer::{AtomicBuffer, AtomicBufferWeak, error::BufferError};
+use poison_error_obj::PoisonErrorObj;
 
 use self::{error::{JoinError, SpawnThreadError}, transport::{StreamTransport, Transport}};
 
@@ -50,10 +51,8 @@ where
     }
 
     pub fn receive(&self) -> Result<Option<Result<MO, T::MessageError>>, T::StreamError>
-    where
-        T::StreamError: From<BufferError>
     {
-        Ok(self.buffer_receive.pop_front().map_err(Into::into)?)
+        Ok(self.buffer_receive.pop_front().map_err(BufferError::from)?)
     }
 }
 
@@ -154,8 +153,6 @@ where
     }
 
     pub fn check_thread(self) -> Result<Self, T::StreamError>
-    where
-        T::StreamError: From<JoinError>
     {
         if self.thread.is_finished()
         {

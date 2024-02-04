@@ -1,5 +1,8 @@
 use atomic_buffer::error::BufferError;
 use thiserror::Error;
+use transport::error::JoinError;
+
+use crate::{TcpConnectError, TcpStreamError};
 
 #[derive(Error, Debug)]
 pub enum TcpListenerError<Target>
@@ -9,7 +12,13 @@ pub enum TcpListenerError<Target>
     #[error("Buffer is null or poisoned.")]
     BufferError(BufferError),
     #[error("Connection is missing.")]
-    MissingConnectionError(Target)
+    MissingConnectionError(Target),
+    #[error("TCP connection error.")]
+    TcpConnectError(TcpConnectError),
+    #[error("Unable to join TCP-listener thread.")]
+    JoinError(JoinError),
+    #[error("TCP-stream error.")]
+    TcpStreamError(TcpStreamError)
 }
 
 impl<Target> From<BufferError> for TcpListenerError<Target>
@@ -17,5 +26,26 @@ impl<Target> From<BufferError> for TcpListenerError<Target>
     fn from(error: BufferError) -> Self
     {
         Self::BufferError(error)
+    }
+}
+impl<Target> From<TcpConnectError> for TcpListenerError<Target>
+{
+    fn from(error: TcpConnectError) -> Self
+    {
+        Self::TcpConnectError(error)
+    }
+}
+impl<Target> From<JoinError> for TcpListenerError<Target>
+{
+    fn from(error: JoinError) -> Self
+    {
+        Self::JoinError(error)
+    }
+}
+impl<Target> From<TcpStreamError> for TcpListenerError<Target>
+{
+    fn from(error: TcpStreamError) -> Self
+    {
+        Self::TcpStreamError(error)
     }
 }

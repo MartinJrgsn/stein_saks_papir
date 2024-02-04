@@ -7,7 +7,7 @@ use thiserror::Error;
 pub enum BufferError
 {
     NullPointerError,
-    PoisonError(PoisonErrorUnguarded),
+    PoisonError(PoisonErrorUnguarded)
 }
 impl Display for BufferError
 {

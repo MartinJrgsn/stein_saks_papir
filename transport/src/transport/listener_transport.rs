@@ -2,7 +2,7 @@ use std::{error::Error, sync::{RwLock, Weak}};
 
 use atomic_buffer::{error::BufferError, AtomicBufferWeak};
 
-use crate::{error::SpawnThreadError, ParaStream, ReceiveBufferShare};
+use crate::{error::{JoinError, SpawnThreadError}, ParaStream, ReceiveBufferShare};
 
 use super::StreamTransport;
 
@@ -11,7 +11,7 @@ where
     RequestType: Send + Sync,
     ResponseType: Send + Sync
 {
-    type ListenerError: Send + Error + From<Self::ConnectError> + From<Self::StreamError> + From<BufferError>;
+    type ListenerError: Send + Error + From<Self::ConnectError> + From<Self::StreamError> + From<BufferError> + From<JoinError>;
     type ListenerArgs: Send + 'static;
     type SpawnListenerError: From<SpawnThreadError> + Error;
     

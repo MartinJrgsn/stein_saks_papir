@@ -88,7 +88,7 @@ where
     for<'a> ResponseType: Deserialize<'a>,
     Self: Clone + Send + Sync
 {
-    type StreamError = BufferError;
+    type StreamError = TcpStreamError;
     type StreamArgs = TcpStream;
     type SpawnStreamError = SpawnTcpStreamError;
 

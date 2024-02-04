@@ -104,13 +104,10 @@ where
     }
 
     pub fn check_thread(self) -> Result<Self, T::ListenerError>
-    where
-        T::ListenerError: From<JoinError>
     {
         if self.thread.is_finished()
         {
-            return Err(self.thread
-                .join()
+            return Err(self.thread.join()
                 .map_err(|error| JoinError(error))?
                 .into()
             )
@@ -119,8 +116,6 @@ where
     }
 
     pub fn update_connections<'a>(&'a mut self) -> (Vec<(T::Target, OnConnect<MI, MO, T>)>, Result<(), T::ListenerError>)
-    where
-        T::ListenerError: From<BufferError>
     {
         let mut events = vec![];
 
@@ -158,13 +153,11 @@ where
 
     pub fn disconnect_all(&mut self) -> Vec<(T::Target, ParaStream<MI, MO, T, ReceiveBufferShare<MI, MO, T>>)>
     {
-        self.connections.drain().collect()
+        self.connections.drain()
+            .collect()
     }
 
     pub fn send_all(&self, message: MI) -> Result<(), T::ListenerError>
-    where
-        T::StreamError: From<BufferError>,
-        T::ListenerError: From<T::StreamError>
     {
         for connection in self.connections.values()
         {
@@ -175,14 +168,12 @@ where
     }
 
     pub fn send(&self, target: T::Target, message: MI) -> Result<(), T::ListenerError>
-    where
-        T::StreamError: From<BufferError>,
-        T::ListenerError: From<T::StreamError>
     {
         match self.connections.get(&target)
         {
             Some(connection) => {
-                connection.send(message).map_err(Into::into)
+                connection.send(message)
+                    .map_err(Into::into)
             },
             None => Err(T::missing_connection_error(target))
         }
@@ -190,17 +181,15 @@ where
 
     pub fn receive(&self)
         -> Result<Option<(T::Target, Result<MO, T::MessageError>)>, T::ListenerError>
-    where
-        T::ListenerError: From<BufferError>
     {
-        Ok(self.buffer_receive.pop_front().map_err(Into::into)?)
+        Ok(self.buffer_receive.pop_front().map_err(BufferError::from)?)
     }
 
     pub fn receive_from(&self, target: T::Target)
         -> Result<Option<Result<MO, T::MessageError>>, T::ListenerError>
-    where
-        T::ListenerError: From<BufferError>
     {
-        Ok(self.buffer_receive.filter_pop_front(|(t, _)| *t == target).map_err(Into::into).map(|m| m.map(|(_, m)| m))?)
+        Ok(self.buffer_receive.filter_pop_front(|(t, _)| *t == target)
+            .map_err(BufferError::from)
+            .map(|m| m.map(|(_, m)| m))?)
     }
 }
