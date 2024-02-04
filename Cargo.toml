@@ -5,7 +5,6 @@ members = [
     "atomic_buffer",
     "transport",
     "transport_tcp",
-    "networked",
     #"game",
     #"game_rps"
 ]
