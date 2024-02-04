@@ -30,7 +30,7 @@ mod test
 
         let transport = Arc::new(RwLock::new(TransportTcp));
 
-        let listener = Arc::new(RwLock::new(ParaListener::<String, _>::new("listener test", target, Arc::downgrade(&transport)).unwrap()));
+        let listener = Arc::new(RwLock::new(ParaListener::<String, String, _>::new("listener test", target, Arc::downgrade(&transport)).unwrap()));
         let listener2 = listener.clone();
 
         std::thread::spawn(move || loop
@@ -42,11 +42,14 @@ mod test
         });
 
         fn update_connections(
-            listener: &Arc<RwLock<ParaListener::<String, TransportTcp>>>,
-            target: SocketAddr
+            listener: &Arc<RwLock<ParaListener::<String, String, TransportTcp>>>
         )
             -> Result<(), TcpListenerError<SocketAddr>>
         {
+            let target = listener.read()
+                .unwrap()
+                .get_target();
+
             let (events, result) = listener.write()
                 .unwrap()
                 .update_connections();
@@ -80,7 +83,7 @@ mod test
         let mut has_connections = None;
         loop
         {
-            update_connections(&listener, target).unwrap();
+            update_connections(&listener).unwrap();
 
             let recipient = loop
             {
@@ -166,7 +169,7 @@ mod test
         let mut prev_error = None;
         let stream = loop
         {
-            match ParaStream::<String, _>::new("stream test", TARGET, Arc::downgrade(&transport))
+            match ParaStream::<String, String, _>::new("stream test", TARGET, Arc::downgrade(&transport))
             {
                 Ok(stream) => break Arc::new(stream),
                 Err(error) => {

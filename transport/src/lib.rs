@@ -3,7 +3,7 @@
 #![feature(is_some_and)]
 
 moddef::moddef!(
-    pub flat mod {
+    pub mod {
         error,
         event,
         transport
@@ -14,3 +14,5 @@ moddef::moddef!(
         receive_buffer
     }
 );
+
+pub use atomic_buffer;

@@ -2,25 +2,29 @@ use std::{sync::{RwLock, Weak}, thread::JoinHandle, collections::{HashMap, VecDe
 
 use atomic_buffer::{AtomicBuffer, AtomicBufferWeak, error::BufferError};
 
+use self::{error::{JoinError, SpawnThreadError}, event::OnConnect, transport::ListenerTransport};
+
 use super::*;
 
-pub struct ParaListener<MessageType, TransportType>
+pub struct ParaListener<RequestType, ResponseType, TransportType>
 where
-    MessageType: Send + Sync,
-    TransportType: ListenerTransport<MessageType>
+    RequestType: Send + Sync,
+    ResponseType: Send + Sync,
+    TransportType: ListenerTransport<RequestType, ResponseType>
 {
     target: TransportType::Target,
     id: TransportType::Target,
     transport: Weak<RwLock<TransportType>>,
     thread: JoinHandle<TransportType::ListenerError>,
-    buffer_incoming: AtomicBuffer<(TransportType::Target, Result<ParaStream<MessageType, TransportType, ReceiveBufferShare<MessageType, TransportType>>, TransportType::ConnectError>)>,
-    buffer_receive: AtomicBuffer<(TransportType::Target, Result<MessageType, TransportType::MessageError>)>,
-    connections: HashMap<TransportType::Target, ParaStream<MessageType, TransportType, ReceiveBufferShare<MessageType, TransportType>>>
+    buffer_incoming: AtomicBuffer<(TransportType::Target, Result<ParaStream<RequestType, ResponseType, TransportType, ReceiveBufferShare<RequestType, ResponseType, TransportType>>, TransportType::ConnectError>)>,
+    buffer_receive: AtomicBuffer<(TransportType::Target, Result<ResponseType, TransportType::MessageError>)>,
+    connections: HashMap<TransportType::Target, ParaStream<RequestType, ResponseType, TransportType, ReceiveBufferShare<RequestType, ResponseType, TransportType>>>
 }
-impl<M, T> ParaListener<M, T>
+impl<MI, MO, T> ParaListener<MI, MO, T>
 where
-    T: ListenerTransport<M> + 'static,
-    M: Send + Sync + Clone + 'static
+    T: ListenerTransport<MI, MO> + 'static,
+    MI: Send + Sync + Clone + 'static,
+    MO: Send + Sync + Clone + 'static
 {
     pub fn new(name: &str, id: T::Target, transport: Weak<RwLock<T>>)
         -> Result<Self, T::SpawnListenerError>
@@ -49,8 +53,8 @@ where
         name: &str,
         id: T::Target,
         transport: Weak<RwLock<T>>,
-        buffer_incoming: AtomicBufferWeak<(T::Target, Result<ParaStream<M, T, ReceiveBufferShare<M, T>>, T::ConnectError>)>,
-        buffer_receive: AtomicBufferWeak<(T::Target, Result<M, T::MessageError>)>
+        buffer_incoming: AtomicBufferWeak<(T::Target, Result<ParaStream<MI, MO, T, ReceiveBufferShare<MI, MO, T>>, T::ConnectError>)>,
+        buffer_receive: AtomicBufferWeak<(T::Target, Result<MO, T::MessageError>)>
     )
         -> Result<(T::Target, JoinHandle<T::ListenerError>), T::SpawnListenerError>
     {
@@ -86,6 +90,10 @@ where
     {
         self.connections.keys().map(|addr| *addr).collect()
     }
+    pub fn get_connection_count(&self) -> usize
+    {
+        self.connections.keys().len()
+    }
     pub fn get_id(&self) -> T::Target
     {
         self.id
@@ -110,7 +118,7 @@ where
         Ok(self)
     }
 
-    pub fn update_connections<'a>(&'a mut self) -> (Vec<(T::Target, OnConnect<M, T>)>, Result<(), T::ListenerError>)
+    pub fn update_connections<'a>(&'a mut self) -> (Vec<(T::Target, OnConnect<MI, MO, T>)>, Result<(), T::ListenerError>)
     where
         T::ListenerError: From<BufferError>
     {
@@ -143,17 +151,17 @@ where
         (events, Ok(()))
     }
 
-    pub fn disconnect(&mut self, target: &T::Target) -> Option<ParaStream<M, T, ReceiveBufferShare<M, T>>>
+    pub fn disconnect(&mut self, target: &T::Target) -> Option<ParaStream<MI, MO, T, ReceiveBufferShare<MI, MO, T>>>
     {
         self.connections.remove(target)
     }
 
-    pub fn disconnect_all(&mut self) -> Vec<(T::Target, ParaStream<M, T, ReceiveBufferShare<M, T>>)>
+    pub fn disconnect_all(&mut self) -> Vec<(T::Target, ParaStream<MI, MO, T, ReceiveBufferShare<MI, MO, T>>)>
     {
         self.connections.drain().collect()
     }
 
-    pub fn send_all(&self, message: M) -> Result<(), T::ListenerError>
+    pub fn send_all(&self, message: MI) -> Result<(), T::ListenerError>
     where
         T::StreamError: From<BufferError>,
         T::ListenerError: From<T::StreamError>
@@ -166,7 +174,7 @@ where
         Ok(())
     }
 
-    pub fn send(&self, target: T::Target, message: M) -> Result<(), T::ListenerError>
+    pub fn send(&self, target: T::Target, message: MI) -> Result<(), T::ListenerError>
     where
         T::StreamError: From<BufferError>,
         T::ListenerError: From<T::StreamError>
@@ -181,7 +189,7 @@ where
     }
 
     pub fn receive(&self)
-        -> Result<Option<(T::Target, Result<M, T::MessageError>)>, T::ListenerError>
+        -> Result<Option<(T::Target, Result<MO, T::MessageError>)>, T::ListenerError>
     where
         T::ListenerError: From<BufferError>
     {
@@ -189,7 +197,7 @@ where
     }
 
     pub fn receive_from(&self, target: T::Target)
-    -> Result<Option<Result<M, T::MessageError>>, T::ListenerError>
+        -> Result<Option<Result<MO, T::MessageError>>, T::ListenerError>
     where
         T::ListenerError: From<BufferError>
     {

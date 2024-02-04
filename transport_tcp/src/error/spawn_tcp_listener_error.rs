@@ -1,10 +1,14 @@
+use thiserror::Error;
 use transport::error::SpawnThreadError;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum SpawnTcpListenerError
 {
+    #[error("Unable to spawn thread for TCP-listener.")]
     SpawnThreadError(SpawnThreadError),
+    #[error("Unable to fetch local IP-address.")]
     GetLocalIpAddressError(local_ip_address::Error),
+    #[error("Unable to bind TCP-listener to the given IP-address.")]
     BindError(std::io::Error)
 }
 

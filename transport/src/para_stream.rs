@@ -2,27 +2,30 @@ use std::{sync::{Weak, RwLock}, thread::JoinHandle};
 
 use atomic_buffer::{AtomicBuffer, AtomicBufferWeak, error::BufferError};
 
+use self::{error::{JoinError, SpawnThreadError}, transport::{StreamTransport, Transport}};
+
 use super::*;
 
 /// A stream running in a parallel process (another thread)
 #[derive(Debug)]
-pub struct ParaStream<MessageType, TransportType, BufferReceive = AtomicBuffer<Result<MessageType, <TransportType as Transport>::MessageError>>>
+pub struct ParaStream<RequestType, ResponseType, TransportType, BufferReceive = AtomicBuffer<Result<ResponseType, <TransportType as Transport>::MessageError>>>
 where
-    TransportType: StreamTransport<MessageType>,
-    BufferReceive: ReceiveBuffer<MessageType, TransportType>
+    TransportType: StreamTransport<RequestType, ResponseType>,
+    BufferReceive: ReceiveBuffer<RequestType, ResponseType, TransportType>
 {
     target: TransportType::Target,
     id: TransportType::Target,
     transport: Weak<RwLock<TransportType>>,
     thread: JoinHandle<TransportType::StreamError>,
-    buffer_send: AtomicBuffer<MessageType>,
+    buffer_send: AtomicBuffer<RequestType>,
     buffer_receive: BufferReceive
 }
 
-impl<M, T> ParaStream<M, T, AtomicBuffer<Result<M, <T as Transport>::MessageError>>>
+impl<MI, MO, T> ParaStream<MI, MO, T, AtomicBuffer<Result<MO, <T as Transport>::MessageError>>>
 where
-    T: StreamTransport<M> + 'static,
-    M: Send + Sync + 'static
+    T: StreamTransport<MI, MO> + 'static,
+    MI: Send + Sync + 'static,
+    MO: Send + Sync + 'static
 {
     pub fn new(name: &str, target: T::Target, transport: Weak<RwLock<T>>)
         -> Result<Self, T::SpawnStreamError>
@@ -46,7 +49,7 @@ where
         })
     }
 
-    pub fn receive<'a>(&'a self) -> Result<Option<Result<M, T::MessageError>>, T::StreamError>
+    pub fn receive(&self) -> Result<Option<Result<MO, T::MessageError>>, T::StreamError>
     where
         T::StreamError: From<BufferError>
     {
@@ -54,11 +57,12 @@ where
     }
 }
 
-impl<M, T, B> ParaStream<M, T, B>
+impl<MI, MO, T, B> ParaStream<MI, MO, T, B>
 where
-    T: StreamTransport<M> + 'static,
-    M: Send + Sync + 'static,
-    B: ReceiveBuffer<M, T> + 'static
+    T: StreamTransport<MI, MO> + 'static,
+    MI: Send + Sync + 'static,
+    MO: Send + Sync + 'static,
+    B: ReceiveBuffer<MI, MO, T> + 'static
 {
     pub fn new_from_connection(
         name: &str,
@@ -93,7 +97,7 @@ where
         name: &str,
         target: T::Target,
         transport: Weak<RwLock<T>>,
-        buffer_send: AtomicBufferWeak<M>,
+        buffer_send: AtomicBufferWeak<MI>,
         buffer_receive: B
     )
         -> Result<(T::Target, JoinHandle<T::StreamError>), T::SpawnStreamError>
@@ -109,7 +113,7 @@ where
         id: T::Target,
         mut args: T::StreamArgs,
         transport: Weak<RwLock<T>>,
-        buffer_send: AtomicBufferWeak<M>,
+        buffer_send: AtomicBufferWeak<MI>,
         buffer_receive: B
     )
         -> Result<JoinHandle<T::StreamError>, T::SpawnStreamError>
@@ -164,7 +168,7 @@ where
         Ok(self)
     }
 
-    pub fn send(&self, message: M) -> Result<(), T::StreamError>
+    pub fn send(&self, message: MI) -> Result<(), T::StreamError>
     where
         T::StreamError: From<BufferError>
     {

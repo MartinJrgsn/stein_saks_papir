@@ -1,9 +1,12 @@
+use thiserror::Error;
 use transport::error::SpawnThreadError;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum SpawnTcpStreamError
 {
+    #[error("Unable to spawn thread for TCP-stream.")]
     SpawnThread(SpawnThreadError),
+    #[error("Connection error.")]
     ConnectError(std::io::Error)
 }
 

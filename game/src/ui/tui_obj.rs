@@ -1,4 +1,4 @@
-use crate::PromtError;
+use crate::error::PromtError;
 
 pub trait TUIObj
 {

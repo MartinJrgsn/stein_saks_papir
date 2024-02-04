@@ -1,11 +1,12 @@
-use crate::{transport::{ListenerTransport}, ParaStream, ReceiveBufferShare};
+use crate::{transport::ListenerTransport, ParaStream, ReceiveBufferShare};
 
-pub enum OnConnect<MessageType, TransportType>
+pub enum OnConnect<RequestType, ResponseType, TransportType>
 where
-    MessageType: Send + Sync,
-    TransportType: ListenerTransport<MessageType>
+    RequestType: Send + Sync,
+    ResponseType: Send + Sync,
+    TransportType: ListenerTransport<RequestType, ResponseType>
 {
     NewConnection,
-    DuplicateConnection(ParaStream<MessageType, TransportType, ReceiveBufferShare<MessageType, TransportType>>),
+    DuplicateConnection(ParaStream<RequestType, ResponseType, TransportType, ReceiveBufferShare<RequestType, ResponseType, TransportType>>),
     ConnectError(TransportType::ConnectError),
 }

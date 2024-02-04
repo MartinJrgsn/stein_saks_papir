@@ -1,81 +1,89 @@
+use std::marker::PhantomData;
+
 use atomic_buffer::{error::BufferError, AtomicBufferWeak, AtomicBuffer};
 use poison_error_obj::PoisonErrorUnguarded;
 
 use crate::transport::{StreamTransport, Transport};
 
-pub trait ReceiveBuffer<MessageType, TransportType>: Send + Sync + Clone
+pub trait ReceiveBuffer<RequestType, ResponseType, TransportType>: Send + Sync + Clone
 where
-    TransportType: StreamTransport<MessageType>
+    TransportType: StreamTransport<RequestType, ResponseType>
 {
-    fn push_back(&self, message_result: Result<MessageType, TransportType::MessageError>) -> Result<(), BufferError>;
+    fn push_back(&self, message_result: Result<ResponseType, TransportType::MessageError>) -> Result<(), BufferError>;
 }
 
-impl<M, T> ReceiveBuffer<M, T> for AtomicBufferWeak<Result<M, <T as Transport>::MessageError>>
+impl<MI, MO, T> ReceiveBuffer<MI, MO, T> for AtomicBufferWeak<Result<MO, <T as Transport>::MessageError>>
 where
-    M: Send + Sync,
-    T: StreamTransport<M>
+    MI: Send + Sync,
+    MO: Send + Sync,
+    T: StreamTransport<MI, MO>
 {
-    fn push_back(&self, message_result: Result<M, <T>::MessageError>) -> Result<(), BufferError>
+    fn push_back(&self, message_result: Result<MO, <T>::MessageError>) -> Result<(), BufferError>
     {
         self.push_back(message_result)
     }
 }
 
-impl<M, T> ReceiveBuffer<M, T> for AtomicBuffer<Result<M, <T as Transport>::MessageError>>
+impl<MI, MO, T> ReceiveBuffer<MI, MO, T> for AtomicBuffer<Result<MO, <T as Transport>::MessageError>>
 where
-    M: Send + Sync,
-    T: StreamTransport<M>
+    MI: Send + Sync,
+    MO: Send + Sync,
+    T: StreamTransport<MI, MO>
 {
-    fn push_back(&self, message_result: Result<M, <T>::MessageError>) -> Result<(), BufferError>
+    fn push_back(&self, message_result: Result<MO, <T>::MessageError>) -> Result<(), BufferError>
     {
         self.push_back(message_result).map_err(|_error| BufferError::PoisonError(PoisonErrorUnguarded))
     }
 }
 
 #[derive(Debug)]
-pub struct ReceiveBufferShare<MessageType, TransportType>
+pub struct ReceiveBufferShare<RequestType, ResponseType, TransportType>
 where
-    TransportType: StreamTransport<MessageType>
+    TransportType: StreamTransport<RequestType, ResponseType>
 {
     id: TransportType::Target,
-    buffer: AtomicBufferWeak<(TransportType::Target, Result<MessageType, TransportType::MessageError>)>
+    buffer: AtomicBufferWeak<(TransportType::Target, Result<ResponseType, TransportType::MessageError>)>,
+    phantom: PhantomData<RequestType>
 }
 
-impl<M, T> Clone for ReceiveBufferShare<M, T>
+impl<MI, MO, T> Clone for ReceiveBufferShare<MI, MO, T>
 where
-    T: StreamTransport<M>
+    T: StreamTransport<MI, MO>
 {
     fn clone(&self) -> Self
     {
         Self {
             id: self.id.clone(),
-            buffer: self.buffer.clone()
+            buffer: self.buffer.clone(),
+            phantom: PhantomData::default()
         }
     }
 }
 
-impl<M, T> ReceiveBufferShare<M, T>
+impl<MI, MO, T> ReceiveBufferShare<MI, MO, T>
 where
-    T: StreamTransport<M>
+    T: StreamTransport<MI, MO>
 {
     pub fn new(
         id: T::Target,
-        buffer: AtomicBufferWeak<(T::Target, Result<M, T::MessageError>)>
+        buffer: AtomicBufferWeak<(T::Target, Result<MO, T::MessageError>)>
     ) -> Self
     {
         Self {
             id,
-            buffer
+            buffer,
+            phantom: PhantomData::default()
         }
     }
 }
 
-impl<M, T> ReceiveBuffer<M, T> for ReceiveBufferShare<M, T>
+impl<MI, MO, T> ReceiveBuffer<MI, MO, T> for ReceiveBufferShare<MI, MO, T>
 where
-    M: Send + Sync,
-    T: StreamTransport<M>
+    MI: Send + Sync,
+    MO: Send + Sync,
+    T: StreamTransport<MI, MO>
 {
-    fn push_back(&self, message_result: Result<M, T::MessageError>) -> Result<(), BufferError>
+    fn push_back(&self, message_result: Result<MO, T::MessageError>) -> Result<(), BufferError>
     {
         self.buffer.push_back((self.id, message_result))
     }

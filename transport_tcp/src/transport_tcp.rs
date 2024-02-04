@@ -23,9 +23,10 @@ impl TransportObj for TransportTcp
     
 }
 
-impl<MessageType> ListenerTransport<MessageType> for TransportTcp
+impl<RequestType, ResponseType> ListenerTransport<RequestType, ResponseType> for TransportTcp
 where
-    for<'a> MessageType: Serialize + Deserialize<'a> + Send + Sync + 'static
+    RequestType: Serialize + Send + Sync + 'static,
+    for<'a> ResponseType: Deserialize<'a> + Send + Sync + 'static
 {
     type ListenerError = TcpListenerError<Self::Target>;
     type ListenerArgs = TcpListener;
@@ -43,8 +44,8 @@ where
 
     fn listener_loop(
         transport: &std::sync::Weak<std::sync::RwLock<Self>>,
-        buffer_incoming: &AtomicBufferWeak<(Self::Target, Result<ParaStream<MessageType, Self, ReceiveBufferShare<MessageType, Self>>, Self::ConnectError>)>,
-        buffer_receive: &AtomicBufferWeak<(Self::Target, Result<MessageType, Self::MessageError>)>,
+        buffer_incoming: &AtomicBufferWeak<(Self::Target, Result<ParaStream<RequestType, ResponseType, Self, ReceiveBufferShare<RequestType, ResponseType, Self>>, Self::ConnectError>)>,
+        buffer_receive: &AtomicBufferWeak<(Self::Target, Result<ResponseType, Self::MessageError>)>,
         listener: &mut Self::ListenerArgs
     )
         -> Result<(), Self::ListenerError>
@@ -56,7 +57,7 @@ where
             peer_addr,
             match listener.local_addr()
             {
-                Ok(target) => match ParaStream::<MessageType, Self, _>::new_from_connection(
+                Ok(target) => match ParaStream::<RequestType, ResponseType, Self, _>::new_from_connection(
                     "Listener connection",
                     target,
                     peer_addr,
@@ -81,9 +82,10 @@ where
     }
 }
 
-impl<MessageType> StreamTransport<MessageType> for TransportTcp
+impl<RequestType, ResponseType> StreamTransport<RequestType, ResponseType> for TransportTcp
 where
-    for<'a> MessageType: Serialize + Deserialize<'a>,
+    RequestType: Serialize,
+    for<'a> ResponseType: Deserialize<'a>,
     Self: Clone + Send + Sync
 {
     type StreamError = BufferError;
@@ -98,13 +100,13 @@ where
     }
     fn stream_loop<B>(
         _transport: &std::sync::Weak<std::sync::RwLock<Self>>,
-        buffer_send: &AtomicBufferWeak<MessageType>,
+        buffer_send: &AtomicBufferWeak<RequestType>,
         buffer_receive: &B,
         mut stream: &mut Self::StreamArgs
     )
         -> Result<(), Self::StreamError>
     where
-        B: ReceiveBuffer<MessageType, Self>
+        B: ReceiveBuffer<RequestType, ResponseType, Self>
     {
         if let Some(message) = buffer_send.pop_front()?
         {

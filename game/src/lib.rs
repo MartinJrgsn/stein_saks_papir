@@ -1,7 +1,15 @@
-pub mod game;
-pub mod session;
-pub mod transport;
-pub mod com;
-pub mod ui;
-pub mod error;
-mod tests;
+#![feature(unsize)]
+
+moddef::moddef!(
+    pub mod {
+        game,
+        session,
+        message,
+        ui,
+        error,
+        event
+    },
+    mod {
+        tests for cfg(test)
+    }
+);
