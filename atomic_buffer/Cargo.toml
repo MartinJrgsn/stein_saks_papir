@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 moddef = "0.2.2"
 poison_error_obj = {path = "../poison_error_obj"}
+thiserror = "1.0.56"
