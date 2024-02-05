@@ -1,6 +1,8 @@
 moddef::moddef!(
     flat(pub) mod {
         join_error,
-        promt_error
+        leave_error,
+        prompt_error,
+        session_error
     }
 );

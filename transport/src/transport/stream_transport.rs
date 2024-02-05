@@ -2,13 +2,13 @@ use std::{error::Error, sync::{RwLock, Weak}};
 
 use atomic_buffer::{error::BufferError, AtomicBufferWeak};
 
-use crate::{error::{JoinError, SpawnThreadError}, ReceiveBuffer};
+use crate::{error::{JoinThreadError, SpawnThreadError}, ReceiveBuffer};
 
 use super::Transport;
 
 pub trait StreamTransport<RequestType, ResponseType>: Transport
 {
-    type StreamError: Send + Error + From<BufferError> + From<JoinError>;
+    type StreamError: Send + Error + From<BufferError> + From<JoinThreadError>;
     type StreamArgs: Send + 'static;
     type SpawnStreamError: From<SpawnThreadError> + Error;
     

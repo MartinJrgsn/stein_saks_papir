@@ -1,11 +1,16 @@
 use serde::{Deserialize, Serialize};
 
+use crate::error::LeaveError;
+
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-pub struct OnLeave<Target>
+pub enum OnLeave<Target>
 {
-    pub server_target: Target,
-    pub client_target: Target,
-    pub reason: LeaveReason
+    Success {
+        server_target: Target,
+        client_target: Target,
+        reason: LeaveReason
+    },
+    Failure(LeaveError)
 }
 
 #[repr(u8)]

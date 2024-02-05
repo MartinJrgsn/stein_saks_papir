@@ -6,7 +6,7 @@ use transport::{transport::*, ParaStream, ReceiveBufferShare, ReceiveBuffer};
 
 use super::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct TransportTcp;
 
 impl Transport for TransportTcp

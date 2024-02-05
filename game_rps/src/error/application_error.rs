@@ -1,49 +1,62 @@
-use crate::tcp_udp::{NewSessionTcpError, SpawnTcpListenerError, SpawnTcpStreamError};
+use game::error::{PromptError, SessionError};
+use transport::error::{JoinThreadError, SpawnThreadError};
+use transport_tcp::error::{SpawnTcpListenerError, SpawnTcpStreamError};
+
+use self::message::{RpsClientMessageData, RpsServerMessageData};
 
 use super::*;
 
 #[derive(Debug)]
 pub enum ApplicationError
 {
-    NewSessionTcpError(NewSessionTcpError),
-    RequestJoinError(RequestJoinError),
-    ThreadError(Box<dyn std::any::Any + Send + 'static>),
-    StdIoError(std::io::Error),
+    SpawnTcpListenerError(SpawnTcpListenerError),
+    SpawnTcpStreamError(SpawnTcpStreamError),
+    SpawnThreadError(SpawnThreadError),
+    JoinThreadError(JoinThreadError),
+    SessionError(SessionError<RpsClientMessageData, RpsServerMessageData, SocketAddr, RpsEndState, TransportTcp>),
+    PromptError(PromptError),
     GameRpsError(GameRpsError)
 }
-impl From<std::io::Error> for ApplicationError
+impl From<SessionError<RpsClientMessageData, RpsServerMessageData, SocketAddr, RpsEndState, TransportTcp>> for ApplicationError
 {
-    fn from(error: std::io::Error) -> Self
+    fn from(error: SessionError<RpsClientMessageData, RpsServerMessageData, SocketAddr, RpsEndState, TransportTcp>) -> Self
     {
-        Self::StdIoError(error)
+        Self::SessionError(error)
     }
 }
-impl From<NewSessionTcpError> for ApplicationError
+impl From<SpawnThreadError> for ApplicationError
 {
-    fn from(error: NewSessionTcpError) -> Self
+    fn from(error: SpawnThreadError) -> Self
     {
-        Self::NewSessionTcpError(error)
+        Self::SpawnThreadError(error)
     }
 }
-impl From<SpawnTcpStreamError> for ApplicationError
+impl From<JoinThreadError> for ApplicationError
 {
-    fn from(error: SpawnTcpStreamError) -> Self
+    fn from(error: JoinThreadError) -> Self
     {
-        Self::NewSessionTcpError(error.into())
+        Self::JoinThreadError(error)
+    }
+}
+impl From<PromptError> for ApplicationError
+{
+    fn from(error: PromptError) -> Self
+    {
+        Self::PromptError(error)
     }
 }
 impl From<SpawnTcpListenerError> for ApplicationError
 {
     fn from(error: SpawnTcpListenerError) -> Self
     {
-        Self::NewSessionTcpError(error.into())
+        Self::SpawnTcpListenerError(error)
     }
 }
-impl From<RequestJoinError> for ApplicationError
+impl From<SpawnTcpStreamError> for ApplicationError
 {
-    fn from(error: RequestJoinError) -> Self
+    fn from(error: SpawnTcpStreamError) -> Self
     {
-        Self::RequestJoinError(error)
+        Self::SpawnTcpStreamError(error)
     }
 }
 impl From<GameRpsError> for ApplicationError

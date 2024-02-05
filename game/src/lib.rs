@@ -1,13 +1,16 @@
 #![feature(unsize)]
+#![feature(let_chains)]
 
 moddef::moddef!(
     pub mod {
         game,
-        session,
+        actor,
         message,
         ui,
+        player,
         error,
-        event
+        event,
+        session
     },
     mod {
         tests for cfg(test)

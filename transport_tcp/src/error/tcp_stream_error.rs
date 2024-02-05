@@ -1,6 +1,6 @@
 use atomic_buffer::error::BufferError;
 use thiserror::Error;
-use transport::error::JoinError;
+use transport::error::JoinThreadError;
 
 use crate::TcpConnectError;
 
@@ -10,7 +10,7 @@ pub enum TcpStreamError
     #[error("Buffer is null or poisoned.")]
     BufferError(BufferError),
     #[error("Unable to join TCP-stream thread.")]
-    JoinError(JoinError)
+    JoinError(JoinThreadError)
 }
 
 impl From<BufferError> for TcpStreamError
@@ -21,9 +21,9 @@ impl From<BufferError> for TcpStreamError
     }
 }
 
-impl From<JoinError> for TcpStreamError
+impl From<JoinThreadError> for TcpStreamError
 {
-    fn from(error: JoinError) -> Self
+    fn from(error: JoinThreadError) -> Self
     {
         Self::JoinError(error)
     }

@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
+use serde::{Deserialize, Serialize};
+
 use super::outcome::Outcome;
 
-use crate::tcp_udp::{DeserializeTcpError, TryDeserializeTcp, SerializeTcp};
-
-#[derive(Clone, Copy, Debug)] // clone explicit , copy implisit
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)] // clone explicit , copy implisit
 #[repr(u8)]
 pub enum Choice
 {
@@ -15,23 +15,23 @@ pub enum Choice
 
 impl Choice
 {
-    fn is_tie(self, oponents_choice : Choice) -> bool
+    fn is_tie(self, opponents_choice : Choice) -> bool
     {
-        return self as u8 == oponents_choice as u8//;
+        self as u8 == opponents_choice as u8
     }
 
-    fn is_win(self, oponents_choice : Choice) -> bool
+    fn is_win(self, opponents_choice : Choice) -> bool
     {
-        return (self as u8 + 1) % (Self::LENGTH as u8) == oponents_choice as u8//;
+        (self as u8 + 1) % (core::mem::variant_count::<Self>() as u8) == opponents_choice as u8
     }
 
-    pub fn get_outcome(self, oponents_choice : Choice) -> Outcome
+    pub fn get_outcome(self, opponents_choice : Choice) -> Outcome
     {
-        if self.is_win(oponents_choice)
+        if self.is_win(opponents_choice)
         {
             Outcome::Win
         }
-        else if self.is_tie(oponents_choice)
+        else if self.is_tie(opponents_choice)
         {
             Outcome::Draw
         }
@@ -39,40 +39,6 @@ impl Choice
         {
             Outcome::Loss
         }
-    }
-    
-    pub const LENGTH : usize = 3;
-    const VALUES : [Choice; Self::LENGTH] = [Choice::Paper, Choice::Rock, Choice::Scissor];
-}
-
-impl TryFrom<u8> for Choice
-{
-    type Error = ();
-    fn try_from(value : u8) -> Result<Choice, Self::Error>
-    {
-        if value >= Choice::LENGTH as u8
-        {
-            return Err(())
-        }
-        
-        Ok(Choice::VALUES[value as usize])
-    }
-}
-impl TryDeserializeTcp for Choice
-{
-    fn try_deserialize_tcp(bytes: &[u8]) -> Result<Self, DeserializeTcpError>
-    {
-        Self::try_from(
-            *bytes.get(0)
-                .ok_or_else(|| DeserializeTcpError::InsufficientBufferLength(bytes.len()))?
-        ).map_err(|_| DeserializeTcpError::ChoiceParseError)
-    }
-}
-impl SerializeTcp for Choice
-{
-    fn serialize_tcp(&self) -> Vec<u8>
-    {
-        vec![*self as u8]
     }
 }
 

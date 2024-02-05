@@ -1,105 +1,126 @@
-pub mod player_rps;
-pub mod ui_rps;
-pub mod session_rps;
-pub mod error;
+moddef::moddef!(
+    flat(pub) mod {
+        choice,
+        end_state,
+        rps_residual,
+        outcome
+    }
+);
 
-pub use player_rps::*;
-pub use ui_rps::*;
-pub use session_rps::*;
-pub use error::*;
+use std::sync::Mutex;
+
+use game::{player::PlayerObj, game::{Game, GameObj}, message::{ClientMessage, ServerMessage}};
+use transport_tcp::error::TcpMessageError;
+
+use crate::error::GameRpsError;
+
+use self::message::{RpsClientMessageData, RpsServerMessageData};
+
+use spellcast::convert::*;
 
 use super::*;
 
-pub enum GameRpsEndState
-{
-    PlayerQuit
-}
-
-pub struct GameRps<SessionType>
-where
-    SessionType: SessionRpsObj + ?Sized
+pub struct GameRps
 {
     choice: [Option<Choice>; 2],
-    choice_log: Vec<[Choice; 2]>,
-    session: Box<SessionType>
+    residual: RpsResidual
 }
-
-impl<SessionType, UIType> GameObj<SessionType, UIType> for GameRps<SessionType>
-where
-    SessionType: SessionRpsObj + ?Sized,
-    UIType: UIRps + ?Sized
+impl GameRps
 {
-    fn get_session(self: &Self) -> &SessionType
-    {
-        &self.session
-    }
-
-    fn get_session_mut(self: &mut Self) -> &mut SessionType
-    {
-        &mut self.session
-    }
-}
-default impl<SessionType, UIType> Game<SessionType, UIType> for GameRps<SessionType>
-where
-    SessionType: SessionRpsObj + ?Sized,
-    UIType: UIRps + ?Sized
-{
-    type GameEndResult = Result<GameRpsEndState, GameRpsError>;
-
-    fn new(session: Box<SessionType>) -> Self
+    pub fn new(session: SessionRps) -> Self
     {
         Self {
             choice: [None; 2],
-            choice_log: vec![],
-            session
+            residual: RpsResidual {
+                choice_log: vec![],
+                session
+            }
         }
     }
+}
+
+impl GameObj for GameRps
+{
+    fn player_capacity(&self) -> usize
+    {
+        2
+    }
+}
+impl<UIType> Game<UIType> for GameRps
+where
+    UIType: UIRps
+{
+    type GameEndResult = Result<RpsEndState, GameRpsError>;
+    type Residual = RpsResidual;
     
     fn game_loop_once(&mut self, ui: &mut UIType) -> Option<Self::GameEndResult>
     {
-        /*match actor.await_event()
-        {
-
-        }*/
-        todo!()
-    }
-
-    fn quit(self: Self, ui: &mut UIType) -> Box<SessionType>
-    {
-        ui.on_quit();
-        self.session
-    }
-}
-impl<SessionType, UIType> Game<SessionType, UIType> for GameRps<SessionType>
-where
-    SessionType: SessionRpsObj + SessionServerObj + ?Sized,
-    UIType: UIRps + ?Sized
-{
-    fn game_loop_once(&mut self, ui: &mut UIType) -> Option<Self::GameEndResult>
-    {
-        let (mut players, _) = self.session.get_players_or_wait_mut()?;
+        self.residual.session.capacity = self.player_capacity();
+        let choice = Arc::new(Mutex::new(self.choice.clone()));
+        let choice_ = choice.clone(); 
+        let players: Vec<_> = self.residual.session.await_players(
+            |human, data| {
+                match data
+                {
+                    RpsClientMessageData::Choice(choice) => {
+                        if let Some(human) = HumanRps::try_convert_get_mut(human)
+                        {
+                            human.get_extra_mut().received_decision = Some(PlayerDecision::Choose(choice));
+                        }
+                    },
+                }
+            },
+            move |human, data| {
+                match data
+                {
+                    RpsServerMessageData::JoinResponse { id } => todo!(),
+                    RpsServerMessageData::RoundOver { choices } => {
+                        *choice_.lock().unwrap() = choices.map(|choice| Some(choice));
+                    },
+                    RpsServerMessageData::GameOver { end_state } => todo!(),
+                }
+            },
+            |human| {
+                if let Some(human) = HumanRps::try_convert_get_mut(human)
+                {
+                    println!("{} joined!", human.get_name());
+                }
+            }
+        ).expect("Error awaiting players.")
+            .into_iter()
+            .enumerate()
+            .map(|(n, _)| n)
+            .collect();
+        self.choice = choice.lock().unwrap().clone();
         match self.choice
         {
+            [Some(choice1), Some(choice2)] => {
+                let outcome = choice1.get_outcome(choice2);
+                println!("{}", if self.residual.session.is_player_local(&*self.residual.session.get_players()[0]) {outcome} else {!outcome});
+                self.residual.choice_log.push([choice1, choice2]);
+                self.choice = [None; 2];
+            },
             _ => {
-                for (i, (player, choice)) in players.iter_mut()
+                for (i, (n, choice)) in players.into_iter()
                     .zip(self.choice.iter_mut())
                     .enumerate()
                 {
                     if choice.is_none()
                     {
-                        match <dyn PlayerRpsObj>::try_convert_get_mut(&mut *player)
+                        let mut player = self.residual.session.get_players()[n].clone();
+                        match <dyn PlayerRpsObj>::try_convert_get_mut(&mut player)
                         {
                             Some(player) => {
                                 match player.make_decision(
-                                    self.session.get_actor(),
-                                    &self.choice_log,
-                                    ui
-                                )?
+                                    ui,
+                                    &self.residual.session,
+                                    &self.residual.choice_log
+                                ).expect("Invalid decision.")
                                 {
                                     Some(decision) => match decision
                                     {
                                         PlayerDecision::Choose(player_choice) => *choice = Some(player_choice),
-                                        PlayerDecision::Quit => return Some(Ok(GameRpsEndState::PlayerQuit))
+                                        PlayerDecision::Quit => return Some(Ok(RpsEndState::PlayerQuit))
                                     }
                                     None => ()
                                 }
@@ -108,16 +129,17 @@ where
                                 return Some(Err(GameRpsError::InvalidPlayerError(i)))
                             }
                         }
+                        self.residual.session.get_players_mut()[n] = player;
                     }
                 }
             }
-            [Some(choice1), Some(choice2)] => {
-                let outcome = choice1.get_outcome(choice2);
-                println!("{}",if self.session.is_local(&**players[0]) {outcome} else {!outcome});
-                self.choice_log.push([choice1, choice2]);
-                self.choice = [None; 2];
-            },
         }
         None
+    }
+
+    fn on_quit(self: Self, ui: &mut UIType) -> RpsResidual
+    {
+        ui.on_quit();
+        self.residual
     }
 }

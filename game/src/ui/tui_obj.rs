@@ -1,13 +1,17 @@
-use crate::error::PromtError;
+use std::sync::Arc;
 
-pub trait TUIObj
+use crate::error::PromptError;
+
+use super::UIObj;
+
+pub trait TUIObj: UIObj
 {
-    fn await_input(&mut self) -> Result<String, PromtError>
+    fn await_input(&mut self) -> Result<String, PromptError>
     {
         let mut input = String::new();
         std::io::stdin()
             .read_line(&mut input)
-            .map_err(|error| PromtError::StdInError(error))?;
+            .map_err(|error| PromptError::StdInError(Arc::new(error)))?;
         Ok(input)
     }
 }

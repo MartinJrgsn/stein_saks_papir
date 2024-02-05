@@ -1,4 +1,5 @@
 #![feature(try_trait_v2)]
+#![feature(let_chains)]
 
 #![feature(is_some_and)]
 

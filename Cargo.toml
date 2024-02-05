@@ -5,5 +5,5 @@ members = [
     "transport",
     "transport_tcp",
     "game",
-    #"game_rps"
+    "game_rps"
 ]

@@ -1,6 +1,6 @@
 use atomic_buffer::error::BufferError;
 use thiserror::Error;
-use transport::error::JoinError;
+use transport::error::JoinThreadError;
 
 use crate::{TcpConnectError, TcpStreamError};
 
@@ -16,7 +16,7 @@ pub enum TcpListenerError<Target>
     #[error("TCP connection error.")]
     TcpConnectError(TcpConnectError),
     #[error("Unable to join TCP-listener thread.")]
-    JoinError(JoinError),
+    JoinError(JoinThreadError),
     #[error("TCP-stream error.")]
     TcpStreamError(TcpStreamError)
 }
@@ -35,9 +35,9 @@ impl<Target> From<TcpConnectError> for TcpListenerError<Target>
         Self::TcpConnectError(error)
     }
 }
-impl<Target> From<JoinError> for TcpListenerError<Target>
+impl<Target> From<JoinThreadError> for TcpListenerError<Target>
 {
-    fn from(error: JoinError) -> Self
+    fn from(error: JoinThreadError) -> Self
     {
         Self::JoinError(error)
     }

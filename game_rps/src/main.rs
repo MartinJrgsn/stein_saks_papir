@@ -19,43 +19,46 @@
 #![feature(associated_const_equality)]
 #![feature(fn_traits)]
 #![feature(split_array)]
+#![feature(variant_count)]
 
-pub mod game;
-pub mod game_rps;
-pub mod player;
-pub mod error;
-pub mod castaway;
-pub mod boxed;
-pub mod traitops;
-pub mod repeat_until;
-pub mod option_kind;
-pub mod result_kind;
-pub mod transport;
+moddef::moddef!(
+    flat(pub) mod {
+        game_rps,
+        ui_rps,
+        player_rps,
+        session_rps
+    },
+    pub mod {
+        message,
+        error
+    }
+);
 
-use std::{net::SocketAddr, time::Duration};
+use std::{net::SocketAddr, sync::{Arc, RwLock, Weak}, time::Duration};
 
-use game::*;
-use game_rps::*;
-use player::*;
-use error::*;
-use castaway::*;
-use boxed::*;
-
-#[cfg(test)]
-mod test;
+use error::ApplicationError;
+use game::{actor::{Actor, ActorKind}, game::Game};
+use transport::{error::{JoinThreadError, SpawnThreadError}, ParaListener, ParaStream};
+use transport_tcp::TransportTcp;
 
 fn main() -> Result<(), ApplicationError>
 {
     const TIMEOUT: Duration = Duration::new(10, 0);
     let target: SocketAddr = SocketAddr::new(local_ip_address::local_ip().unwrap(), 6666);
+    let transport = Arc::new(RwLock::new(TransportTcp));
+    let transport_weak = Arc::downgrade(&transport);
 
     let mut server_thread = Some(std::thread::Builder::new()
         .name("Server Main".to_string())
-        .spawn(move || main_server(target.port(), TIMEOUT))?);
+        .spawn(move || main_server(target, transport_weak))
+        .map_err(|error| SpawnThreadError(error))?);
+    
+    let transport_weak = Arc::downgrade(&transport);
     
     let mut client_thread = Some(std::thread::Builder::new()
         .name("Client Main".to_string())
-        .spawn(move || main_client(target))?);
+        .spawn(move || main_client(target, transport_weak))
+        .map_err(|error| SpawnThreadError(error))?);
 
     while server_thread.is_some() || client_thread.is_some()
     {
@@ -63,14 +66,20 @@ fn main() -> Result<(), ApplicationError>
         {
             if thread.is_finished()
             {
-                server_thread.take().unwrap().join().map_err(|error| ApplicationError::ThreadError(error))??;
+                server_thread.take()
+                    .unwrap()
+                    .join()
+                    .map_err(|error| JoinThreadError(error))??;
             }
         }
         if let Some(thread) = &mut client_thread
         {
             if thread.is_finished()
             {
-                client_thread.take().unwrap().join().map_err(|error| ApplicationError::ThreadError(error))??;
+                client_thread.take()
+                    .unwrap()
+                    .join()
+                    .map_err(|error| JoinThreadError(error))??;
             }
         }
     }
@@ -78,28 +87,28 @@ fn main() -> Result<(), ApplicationError>
     Ok(())
 }
 
-fn main_server(port: u16, timeout: Duration) -> Result<(), ApplicationError>
+fn main_server(target: SocketAddr, transport: Weak<RwLock<TransportTcp>>) -> Result<(), ApplicationError>
 {
     let mut ui = TUI;
-    let mut session = SessionServer::new(port, timeout)?;
-    session.try_join(&mut ui)?;
+    let session = SessionRps::new(2, ActorKind::Server, "RPS Server", target, transport)?;
 
-    let mut rps_game = GameRps::new(Box::new(session));
+    let rps_game = GameRps::new(session);
 
-    rps_game.game_loop(&mut ui)?;
+    let (result, _) = rps_game.game_loop(&mut ui);
+    println!("Game End: {}", result?);
 
     Ok(())
 }
 
-fn main_client(target: SocketAddr) -> Result<(), ApplicationError>
+fn main_client(target: SocketAddr, transport: Weak<RwLock<TransportTcp>>) -> Result<(), ApplicationError>
 {
     let mut ui = TUI;
-    let mut session = SessionClient::new_client(target)?;
-    session.try_join(&mut ui)?;
+    let session = SessionRps::new(2, ActorKind::Client, "RPS Client", target, transport)?;
 
-    let mut rps_game = GameRps::new(Box::new(session));
+    let rps_game = GameRps::new(session);
 
-    rps_game.game_loop(&mut ui)?;
+    let (result, _) = rps_game.game_loop(&mut ui);
+    println!("Game End: {}", result?);
 
     Ok(())
 }

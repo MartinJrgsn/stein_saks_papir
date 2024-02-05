@@ -1,8 +1,8 @@
-use std::{sync::{RwLock, Weak}, thread::JoinHandle, collections::{HashMap, VecDeque}};
+use std::{collections::{HashMap, VecDeque}, os::windows::io::AsHandle, sync::{RwLock, Weak}, thread::JoinHandle};
 
 use atomic_buffer::{AtomicBuffer, AtomicBufferWeak, error::BufferError};
 
-use self::{error::{JoinError, SpawnThreadError}, event::OnConnect, transport::ListenerTransport};
+use self::{error::{JoinThreadError, SpawnThreadError}, event::OnConnect, transport::ListenerTransport};
 
 use super::*;
 
@@ -12,10 +12,11 @@ where
     ResponseType: Send + Sync,
     TransportType: ListenerTransport<RequestType, ResponseType>
 {
+    name: String,
     target: TransportType::Target,
     id: TransportType::Target,
     transport: Weak<RwLock<TransportType>>,
-    thread: JoinHandle<TransportType::ListenerError>,
+    thread: Option<JoinHandle<TransportType::ListenerError>>,
     buffer_incoming: AtomicBuffer<(TransportType::Target, Result<ParaStream<RequestType, ResponseType, TransportType, ReceiveBufferShare<RequestType, ResponseType, TransportType>>, TransportType::ConnectError>)>,
     buffer_receive: AtomicBuffer<(TransportType::Target, Result<ResponseType, TransportType::MessageError>)>,
     connections: HashMap<TransportType::Target, ParaStream<RequestType, ResponseType, TransportType, ReceiveBufferShare<RequestType, ResponseType, TransportType>>>
@@ -40,10 +41,11 @@ where
             buffer_receive.downgrade()
         )?;
         Ok(Self {
+            name: name.to_string(),
             target,
             id,
             transport,
-            thread,
+            thread: Some(thread),
             buffer_incoming,
             buffer_receive,
             connections
@@ -103,16 +105,21 @@ where
         &self.transport
     }
 
-    pub fn check_thread(self) -> Result<Self, T::ListenerError>
+    pub fn check_thread(&mut self) -> Result<(), T::ListenerError>
     {
-        if self.thread.is_finished()
+        for (_, connection) in self.connections.iter_mut()
         {
-            return Err(self.thread.join()
-                .map_err(|error| JoinError(error))?
-                .into()
-            )
+            connection.check_thread()?;
         }
-        Ok(self)
+        if let Some(thread) = &self.thread && thread.is_finished()
+        {
+            let thread = self.thread.take().unwrap();
+            let error = thread.join()
+                .map_err(|error| JoinThreadError(error))?
+                .into();
+            return Err(error)
+        }
+        Ok(())
     }
 
     pub fn update_connections<'a>(&'a mut self) -> (Vec<(T::Target, OnConnect<MI, MO, T>)>, Result<(), T::ListenerError>)
@@ -125,7 +132,7 @@ where
             Err(error) => return (events, Err(BufferError::from(error).into())) 
         }
         {
-            if self.connections.contains_key(&addr)
+            if !self.connections.contains_key(&addr)
             {
                 if let Ok(connection) = connection
                 {

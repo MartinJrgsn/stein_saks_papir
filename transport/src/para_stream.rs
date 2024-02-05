@@ -3,7 +3,7 @@ use std::{sync::{Weak, RwLock}, thread::JoinHandle};
 use atomic_buffer::{AtomicBuffer, AtomicBufferWeak, error::BufferError};
 use poison_error_obj::PoisonErrorObj;
 
-use self::{error::{JoinError, SpawnThreadError}, transport::{StreamTransport, Transport}};
+use self::{error::{JoinThreadError, SpawnThreadError}, transport::{StreamTransport, Transport}};
 
 use super::*;
 
@@ -14,10 +14,11 @@ where
     TransportType: StreamTransport<RequestType, ResponseType>,
     BufferReceive: ReceiveBuffer<RequestType, ResponseType, TransportType>
 {
+    name: String,
     target: TransportType::Target,
     id: TransportType::Target,
     transport: Weak<RwLock<TransportType>>,
-    thread: JoinHandle<TransportType::StreamError>,
+    thread: Option<JoinHandle<TransportType::StreamError>>,
     buffer_send: AtomicBuffer<RequestType>,
     buffer_receive: BufferReceive
 }
@@ -41,10 +42,11 @@ where
             buffer_receive.downgrade()
         )?;
         Ok(Self {
+            name: name.to_string(),
             target,
             id,
             transport,
-            thread,
+            thread: Some(thread),
             buffer_send,
             buffer_receive
         })
@@ -83,10 +85,11 @@ where
             buffer_receive.clone()
         )?;
         Ok(Self {
+            name: name.to_string(),
             target,
             id,
             transport,
-            thread,
+            thread: Some(thread),
             buffer_send,
             buffer_receive
         })
@@ -152,17 +155,18 @@ where
         &self.transport
     }
 
-    pub fn check_thread(self) -> Result<Self, T::StreamError>
+    pub fn check_thread(&mut self) -> Result<(), T::StreamError>
     {
-        if self.thread.is_finished()
+        if let Some(thread) = &self.thread && thread.is_finished()
         {
-            return Err(self.thread
+            let thread = self.thread.take().unwrap();
+            return Err(thread
                 .join()
-                .map_err(|error| JoinError(error))?
+                .map_err(|error| JoinThreadError(error))?
                 .into()
             )
         }
-        Ok(self)
+        Ok(())
     }
 
     pub fn send(&self, message: MI) -> Result<(), T::StreamError>
