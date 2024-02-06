@@ -1,4 +1,4 @@
-use std::{net::{TcpStream, SocketAddr, TcpListener}, io::{Read, Write}};
+use std::{io::{BorrowedBuf, BorrowedCursor, Read, Write}, net::{SocketAddr, TcpListener, TcpStream}, os::windows::io::AsSocket, time::Duration};
 
 use atomic_buffer::{AtomicBufferWeak, error::BufferError};
 use serde::{Deserialize, Serialize};
@@ -52,6 +52,8 @@ where
     {
         let (stream, peer_addr) = listener.accept()
             .map_err(|error| TcpListenerError::AcceptConnectionError(error))?;
+
+        println!("Accepted {}", peer_addr);
 
         buffer_incoming.push_back((
             peer_addr,
@@ -108,7 +110,7 @@ where
     where
         B: ReceiveBuffer<RequestType, ResponseType, Self>
     {
-        if let Some(message) = buffer_send.pop_front()?
+        while let Some(message) = buffer_send.pop_front()?
         {
             if let Err(error) = write_tcp_message(&mut stream, message)
             {
@@ -116,7 +118,7 @@ where
             }
         }
 
-        if let Some(message_result) = read_tcp_message(&mut stream)
+        while let Some(message_result) = read_tcp_message(&mut stream)
         {
             buffer_receive.push_back(message_result.map_err(Into::into))?
         }
@@ -147,8 +149,9 @@ fn read_tcp_message<MessageType>(stream: &mut TcpStream) -> Option<Result<Messag
 where
     for<'a> MessageType: Deserialize<'a>
 {
+    stream.set_read_timeout(Some(Duration::new(2, 0))).unwrap();
     let mut bytes = vec![];
-    match stream.read(&mut bytes)
+    match stream.read_to_end(&mut bytes)
     {
         Ok(size) => if size == 0
         {
@@ -156,12 +159,20 @@ where
         }
         else
         {
+            println!("Read something");
             match bincode::deserialize(&bytes)
             {
                 Ok(message) => Some(Ok(message)),
                 Err(error) => Some(Err(TcpMessageReadError::DeserializeError(error)))
             }
         },
-        Err(error) => Some(Err(TcpMessageReadError::ReadFromStreamError(error)))
+        Err(error) => if error.raw_os_error() == Some(10060)
+        {
+            None
+        }
+        else
+        {
+            Some(Err(TcpMessageReadError::ReadFromStreamError(error)))
+        }
     }
 }
