@@ -149,7 +149,8 @@ fn read_tcp_message<MessageType>(stream: &mut TcpStream) -> Option<Result<Messag
 where
     for<'a> MessageType: Deserialize<'a>
 {
-    stream.set_read_timeout(Some(Duration::new(2, 0))).unwrap();
+    const TIMEOUT_DURATION: Duration = Duration::new(2, 0);
+    stream.set_read_timeout(Some(TIMEOUT_DURATION)).unwrap();
     let mut bytes = vec![];
     match stream.read_to_end(&mut bytes)
     {
